@@ -1,0 +1,145 @@
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #0a192f, #112240);
+        font-family: 'Segoe UI', sans-serif;
+        color: whitesmoke;
+    }
+
+    body::before {
+        content: "";
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        z-index: 0;
+    }
+
+    .content {
+        position: relative;
+        z-index: 2;
+        padding: 30px;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(12px);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        padding: 20px;
+        color: white;
+    }
+.system-title{
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-size: 36px;
+    font-weight: 800; /* bold */
+    color: #0d6efd; /* professional blue */
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.system-title i{
+    font-size: 32px;
+    color: #0d6efd;
+}
+    /* Navigation Boxes */
+.nav-box {
+    background: rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s ease;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+/* Hover */
+.nav-box:hover {
+    background: rgba(13,110,253,0.3);
+    transform: translateY(-3px);
+}
+
+/* Active */
+.stat-active {
+    color: #22c55e;
+}
+
+/* Permanent */
+.stat-permanent {
+    color: #3b82f6;
+}
+
+/* Temporary */
+.stat-temporary {
+    color: #f59e0b;
+}
+
+/* Separated */
+.stat-separated {
+    color: #ef4444;
+}
+
+    /* Stat Boxes */
+    .stat-box {
+        text-align: center;
+        padding: 25px;
+    }
+
+    .stat-number {
+        font-size: 28px;
+        font-weight: 600;
+        margin-top: 10px;
+    }
+
+    /* Logout Button */
+    .btn-logout {
+        background: transparent;
+        border: 1px solid #ff4d4d;
+        color: #ff4d4d;
+        padding: 6px 18px;
+        border-radius: 8px;
+        transition: 0.3s;
+    }
+
+    .btn-logout:hover {
+        background: #ff4d4d;
+        color: white;
+    }
+
+    /* Table */
+    .custom-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+
+    .custom-table thead th {
+        background: rgba(13,110,253,0.4);
+        padding: 12px;
+        text-transform: uppercase;
+        font-size: 13px;
+        letter-spacing: 1px;
+        border: none;
+    }
+
+    .custom-table tbody tr {
+        background: rgba(255,255,255,0.05);
+        transition: 0.2s;
+    }
+
+    .custom-table tbody tr:hover {
+        background: rgba(255,255,255,0.12);
+    }
+
+    .custom-table td {
+        padding: 12px;
+        border: none;
+    }
+

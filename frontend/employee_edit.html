@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Employee | Employee Information System</title>
+<link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="./css/global.css">
+<script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/edit_employee.js"></script>
+</head>
+<body>
+
+<div class="content container-fluid d-flex justify-content-center">
+    <div class="premium-card w-75 mt-5">
+        <h2 class="system-title text-center mb-4">EDIT EMPLOYEE</h2>
+        <form id="editEmployeeForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Employee ID</label>
+                    <input type="text" class="form-control" id="empId" disabled>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Birthday</label>
+                    <input type="date" class="form-control" id="birthday" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">First Name</label>
+                    <input type="text" class="form-control" id="firstName" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Middle Name</label>
+                    <input type="text" class="form-control" id="middleName">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" class="form-control" id="lastName" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Position</label>
+                    <input type="text" class="form-control" id="position">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Department</label>
+                    <input type="text" class="form-control" id="department">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Date Hired</label>
+                    <input type="date" class="form-control" id="dateHired">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="status" required>
+                        <option value="">Select status</option>
+                        <option>Active</option>
+                        <option>Permanent</option>
+                        <option>Temporary</option>
+                        <option>Separated</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-success">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                </button>
+                <a href="employee_list.html" class="btn btn-secondary">
+                    <i class="fa-solid fa-xmark"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

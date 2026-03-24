@@ -1,0 +1,124 @@
+
+/* Same background as other pages */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0a192f, #112240);
+    color: white;
+    overflow-x: hidden;
+    position: relative;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: 0;
+}
+
+/* Top Header */
+.top-header {
+    width: 100%;
+    padding: 25px 40px;
+    text-align: center;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #0d6efd;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    position: relative;
+    z-index: 1;
+}
+
+/* Card */
+.info-card {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 40px;
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+    transition: all 0.4s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 30px 70px rgba(0,0,0,0.7);
+}
+
+/* Title */
+.info-card h3 {
+    font-size: 36px; /* Bigger title */
+    font-weight: 700;
+    background: linear-gradient(90deg, #0d6efd, #3b82f6);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+/* Input fields */
+.form-control {
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 1px solid #2563eb;
+    background: rgba(255,255,255,0.05);
+    color: white;
+}
+
+.form-control::placeholder {
+    color: #cbd5e1;
+}
+
+/* Buttons */
+.btn-success, .btn-secondary {
+    padding: 10px 25px;
+    font-weight: 600;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    margin-right: 10px;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #0d6efd, #2563eb);
+    border: none;
+    color: white;
+    box-shadow: 0 6px 20px rgba(13,110,253,0.4);
+}
+
+.btn-success:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 10px 25px rgba(13,110,253,0.6);
+}
+
+.btn-secondary {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+/* Responsive */
+@media(max-width:768px) {
+    .info-card {
+        padding: 25px 20px;
+    }
+
+    .btn-success, .btn-secondary {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}

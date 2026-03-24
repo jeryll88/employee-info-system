@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Edit Service Record</title>
+
+<link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="./css/global.css">
+<link rel="stylesheet" href="./css/edit_service.css">
+<script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/auth.js"></script>
+</head>
+<body>
+
+<div class="top-header">
+    EMPLOYEE INFORMATION SYSTEM
+</div>
+
+    <div class="premium-card mx-auto" style="max-width: 600px; margin-top: 2rem;">
+        <h3 class="system-title text-center mb-4">Edit Service Record</h3>
+
+        <form id="editServiceForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label text-dim small">Designation</label>
+                    <input type="text" id="designation" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label text-dim small">Status (e.g. Regular)</label>
+                    <input type="text" id="status" class="form-control">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label text-dim small">Salary Range</label>
+                    <input type="text" id="salaryRange" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label text-dim small">Station</label>
+                    <input type="text" id="station" class="form-control">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label text-dim small">Date From</label>
+                    <input type="date" id="dateFrom" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label text-dim small">Date To</label>
+                    <input type="date" id="dateTo" class="form-control">
+                    <small class="text-dim smaller">Leave blank if Present</small>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label text-dim small">Remarks</label>
+                <textarea id="remarks" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-premium">
+                    <i class="bi bi-save me-2"></i> Update Record
+                </button>
+                <div class="row g-2">
+                    <div class="col">
+                        <button type="button" class="btn btn-outline-danger w-100" onclick="deleteRecord()">
+                            <i class="bi bi-trash me-2"></i> Delete
+                        </button>
+                    </div>
+                    <div class="col">
+                        <button type="button" class="btn btn-outline-secondary w-100" onclick="goBack()">
+                            <i class="bi bi-x-lg me-2"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+<script src="./js/auth.js"></script>
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const id = urlParams.get('id');
+const empId = urlParams.get('empId');
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const s = await API.get(`/api/service_records/${id}`);
+
+        document.getElementById('designation').value = s.designation || '';
+        document.getElementById('status').value      = s.status || '';
+        document.getElementById('salaryRange').value = s.salary_range || '';
+        document.getElementById('station').value     = s.station || '';
+        document.getElementById('dateFrom').value    = s.date_from || '';
+        document.getElementById('dateTo').value      = s.date_to || '';
+        document.getElementById('remarks').value     = s.remarks || '';
+    } catch (err) { goBack(); }
+});
+
+document.getElementById('editServiceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+        designation: document.getElementById('designation').value.trim(),
+        status:      document.getElementById('status').value.trim(),
+        salary_range:document.getElementById('salaryRange').value.trim(),
+        station:     document.getElementById('station').value.trim(),
+        date_from:   document.getElementById('dateFrom').value,
+        date_to:     document.getElementById('dateTo').value || null,
+        remarks:     document.getElementById('remarks').value.trim()
+    };
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+
+    try {
+        await API.put(`/api/service_records/${id}`, payload);
+        API.showToast("Service record updated!");
+        API.logActivity(`Updated service record for Employee ${empId}: ${payload.designation}`);
+        setTimeout(goBack, 1000);
+    } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-save me-2"></i> Update Record';
+    }
+});
+
+async function deleteRecord() {
+    if (!confirm("Delete this service record?")) return;
+    try {
+        await API.delete(`/api/service_records/${id}`);
+        API.showToast("Record deleted successfully!");
+        API.logActivity(`Deleted service record ID ${id} (Employee ${empId})`);
+        setTimeout(goBack, 1000);
+    } catch (err) {}
+}
+
+function goBack() {
+    window.location.href = `service_record.html?id=${empId}`;
+}
+</script>
+</body>
+</html>

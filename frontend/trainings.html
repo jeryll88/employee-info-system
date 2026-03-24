@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Trainings | Employee Information System</title>
+
+<link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="./css/global.css">
+<link rel="stylesheet" href="./css/trainings.css">
+<script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/auth.js"></script>
+</head>
+
+<body>
+<div class="top-header">EMPLOYEE INFORMATION SYSTEM</div>
+
+<div class="container-fluid mt-4">
+  <div class="premium-card">
+    <h2 class="system-title text-center mb-4">TRAININGS</h2>
+
+    <!-- Back Button -->
+    <div class="mb-3">
+      <button class="btn btn-premium btn-sm" onclick="goBack()">
+        <i class="bi bi-arrow-left"></i> Back
+      </button>
+    </div>
+
+    <!-- Search + Add -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+      <div class="flex-grow-1 me-2">
+        <input type="text" class="form-control search-input" placeholder="Search Trainings" id="searchInput">
+      </div>
+      <button class="btn add-btn" onclick="showAddTrainingForm()">
+        <i class="fa-solid fa-plus"></i> Add
+      </button>
+    </div>
+
+    <!-- Trainings Table -->
+    <div class="table-responsive">
+      <table class="table-custom text-center align-middle" id="trainingsTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Add Training Form -->
+    <div id="addTrainingForm" style="display:none; margin-top:20px;">
+      <h5>Add Training</h5>
+      <div class="mb-2">
+        <input type="text" id="trainingTitle" class="form-control" placeholder="Training Title">
+      </div>
+      <div class="mb-2">
+        <input type="date" id="trainingDate" class="form-control">
+      </div>
+      <button class="btn btn-success" onclick="saveTraining()">Save Training</button>
+      <button class="btn btn-secondary" onclick="hideAddTrainingForm()">Cancel</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const empId = urlParams.get('id');
+const user  = getCurrentUser();
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!empId) {
+        alert("No employee specified");
+        window.location.href = "employee_list.html";
+        return;
+    }
+    loadTrainings();
+    
+    // Hide add button if not admin/hr
+    if (user.role === 'employee') {
+        document.querySelector('.add-btn').style.display = 'none';
+    }
+});
+
+function goBack() {
+    window.location.href = `employee_info.html?id=${empId}`;
+}
+
+function showAddTrainingForm() {
+    document.getElementById('addTrainingForm').style.display = 'block';
+}
+
+function hideAddTrainingForm() {
+    document.getElementById('addTrainingForm').style.display = 'none';
+}
+
+async function loadTrainings() {
+    const tableBody = document.querySelector("#trainingsTable tbody");
+    try {
+        const list = await API.get(`/api/trainings?employee_id=${empId}`);
+        
+        tableBody.innerHTML = '';
+        if (list.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="4">No trainings yet</td></tr>`;
+            return;
+        }
+
+        list.forEach(t => {
+            tableBody.innerHTML += `
+                <tr>
+                    <td><span class="text-dim">#</span>${t.id}</td>
+                    <td class="fw-bold">${t.title}</td>
+                    <td>${t.training_date}</td>
+                    <td>
+                        <div class="d-flex justify-content-center gap-2">
+                            ${(user.role === 'admin' || user.role === 'hr') ? `
+                                <a href="edit_training.html?id=${t.id}&empId=${empId}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            ` : ''}
+                            ${user.role === 'admin' ? `
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteTraining(${t.id}, '${t.title}')" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>`;
+        });
+    } catch (err) {
+        tableBody.innerHTML = `<tr><td colspan="4" class="text-danger">Error loading data</td></tr>`;
+    }
+}
+
+async function saveTraining() {
+    const title = document.getElementById('trainingTitle').value.trim();
+    const date  = document.getElementById('trainingDate').value;
+
+    if (!title || !date) {
+        API.showToast("Please fill all fields", "warning");
+        return;
+    }
+
+    try {
+        await API.post('/api/trainings', { employee_id: empId, title, training_date: date });
+        API.showToast(`Training "${title}" added successfully!`);
+        API.logActivity(`Added Training: ${title} for Employee ${empId}`);
+        
+        hideAddTrainingForm();
+        loadTrainings();
+        document.getElementById('trainingTitle').value = '';
+        document.getElementById('trainingDate').value = '';
+    } catch (err) {}
+}
+
+async function deleteTraining(id, title) {
+    if (!confirm(`Delete training "${title}"?`)) return;
+    try {
+        await API.delete(`/api/trainings/${id}`);
+        API.showToast(`Training "${title}" deleted`);
+        API.logActivity(`Deleted Training: ${title}`);
+        loadTrainings();
+    } catch (err) {}
+}
+</script>
+
+
+</body>
+</html>
