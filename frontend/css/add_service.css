@@ -1,0 +1,105 @@
+/* Body & background with grid lines */
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0a192f, #112240);
+    color: white;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Grid overlay */
+body::before {
+    content: "";
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: 0;
+}
+
+/* Info Card */
+.info-card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 15px;
+    padding: 25px 20px;
+    margin-top: 20px;
+    font-family: 'Segoe UI', sans-serif;;
+}
+
+/* Title on the side */
+.system-title, .info-card h3 {
+    font-size: 50px;  /* bigger title */
+    font-weight: 800;
+    background: linear-gradient(90deg, #0d6efd, #3b82f6);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    text-align: center;
+    margin-bottom: 30px;
+    font-family: 'Segoe UI', sans-serif;;
+}
+
+/* Inputs smaller and boxed */
+input.form-control {
+    padding: 12px 15px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 1px solid #2563eb;
+    background: rgba(255,255,255,0.05);
+    color: white;
+    width: 100%;
+}
+
+/* Labels */
+.form-label, label {
+    font-weight: 500;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* Buttons */
+.btn-success {
+    background: linear-gradient(135deg, #0d6efd, #2563eb);
+    border: none;
+    padding: 8px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 10px 25px rgba(13,110,253,0.6);
+}
+
+.btn-secondary {
+    padding: 8px 20px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+/* Responsive */
+@media(max-width:768px){
+    .info-card {
+        padding: 20px;
+    }
+
+    .system-title, .info-card h3 {
+        font-size: 36px;
+        margin-bottom: 15px;
+    }
+}

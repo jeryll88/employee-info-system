@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll | Employee Information System</title>
+
+<!-- Bootstrap 5 -->
+<link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="./css/global.css">
+<link rel="stylesheet" href="./css/payroll.css">
+<script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/payroll.js"></script>
+</head>
+
+<body>
+<div class="container d-flex justify-content-center mt-5">
+    <div class="premium-card w-50 text-center">
+
+        <h2 class="system-title">
+            <i class="bi bi-wallet2"></i> PAYROLL
+        </h2>
+
+        <div class="mb-4 mt-4 text-start">
+            <label class="form-label text-dim small text-uppercase fw-bold">Employee ID</label>
+            <input type="text" id="empId" class="form-control text-center" placeholder="e.g. EMP1001" style="font-size: 1.2rem; letter-spacing: 2px;">
+        </div>
+
+        <div class="d-grid mb-4">
+            <button class="btn btn-premium btn-lg" id="generatePayrollBtn">
+                <i class="bi bi-cpu me-2"></i> Calculate Net Salary
+            </button>
+        </div>
+
+        <div id="result" class="mt-4"></div>
+
+        <div class="mt-4 pt-3 border-top border-secondary border-opacity-25">
+            <a href="dashboard.html" class="btn btn-link text-dim text-decoration-none small">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const user = getCurrentUser();
+        const empIdInput = document.getElementById('empId');
+        
+        // If employee, they can only see their own payroll
+        if (user && user.role === 'employee') {
+            empIdInput.value = user.employee_id || '';
+            empIdInput.disabled = true;
+        } else {
+            // If admin/HR, they can optionally use the query param ID
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            if (id) empIdInput.value = id;
+        }
+    });
+</script>
+
+
+</body>
+</html>

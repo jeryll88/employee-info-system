@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard | Employee Information System</title>
+
+<link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="./css/global.css">
+<link rel="stylesheet" href="./css/list.css">
+<script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/auth.js"></script>
+</head>
+
+<body>
+
+<!-- AUTH GUARD -->
+<script>if (!requireAuth()) {}</script>
+
+<div class="content container-fluid">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div class="top-header mb-0">Employee Information System</div>
+
+        <div class="d-flex align-items-center gap-3">
+            <div id="userInfo" style="font-size:14px;color:white;"></div>
+
+            <button onclick="authLogout()" 
+                style="background:transparent;border:1px solid #ff4d4d;color:#ff4d4d;padding:6px 18px;border-radius:8px;cursor:pointer;">
+                <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="row g-3 mb-4" id="navBar"></div>
+
+    <!-- Welcome Section -->
+    <div class="premium-card">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <h2 class="mb-0">Employee Directory</h2>
+            <div id="adminActions"></div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-dark border-secondary text-dim"><i class="bi bi-search"></i></span>
+                    <input type="text" id="searchInput" class="form-control bg-dark text-white border-secondary" placeholder="Search by name, position or ID..." oninput="filterEmployees()">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select id="statusFilter" class="form-select bg-dark text-white border-secondary" onchange="filterEmployees()">
+                    <option value="">All Statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="Permanent">Permanent</option>
+                    <option value="Temporary">Temporary</option>
+                    <option value="Separated">Separated</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" onclick="resetDirectory()">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle" id="employeeTable">
+                <thead>
+                    <tr class="text-dim small text-uppercase">
+                        <th>ID</th>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Joined</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="employeeList">
+                    <tr>
+                        <td colspan="6" class="text-center">Loading employees...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+
+<script src="./js/employee_list.js"></script>
+
+<script>
+const user = getCurrentUser();
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    // Build Navigation (make sure employee is removed in auth.js)
+    document.getElementById('navBar').innerHTML =
+        buildNav(user.role, '');
+
+    // Show logged-in user
+    document.getElementById('userInfo').innerHTML =
+        `<span style="color:#9ca3af">
+            Logged in as <strong style="color:white">${user.username}</strong>
+        </span>
+        &nbsp;${getRoleBadgeHtml(user.role)}`;
+
+});
+</script>
+
+</body>
+</html>

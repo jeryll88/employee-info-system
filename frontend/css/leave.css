@@ -1,0 +1,217 @@
+/* ============================================================
+   Leave Pages CSS — Employee Information System
+   Consistent with the dark glassmorphism theme
+   ============================================================ */
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a192f, #112240);
+    font-family: 'Segoe UI', sans-serif;
+    color: whitesmoke;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: 0;
+}
+
+.content {
+    position: relative;
+    z-index: 2;
+    padding: 30px;
+}
+
+.glass-card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    padding: 25px;
+    color: white;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0d6efd;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-box {
+    background: rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s ease;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: white;
+}
+.nav-box:hover {
+    background: rgba(13,110,253,0.3);
+    transform: translateY(-3px);
+    color: white;
+}
+.nav-active { background: rgba(13,110,253,0.5) !important; }
+
+/* Form Styles */
+.leave-form .form-label {
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+.leave-form .form-control,
+.leave-form .form-select {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: white;
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+.leave-form .form-control:focus,
+.leave-form .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13,110,253,0.2);
+    background: rgba(255,255,255,0.12);
+    color: white;
+}
+.leave-form .form-select option {
+    background: #112240;
+    color: white;
+}
+
+/* Balance Cards */
+.balance-card {
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+.balance-card.sick    { background: rgba(34,197,94,0.12);  border: 1px solid rgba(34,197,94,0.3);  }
+.balance-card.vacation{ background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); }
+
+.balance-num {
+    font-size: 38px;
+    font-weight: 800;
+    margin: 5px 0;
+}
+.balance-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #9ca3af;
+}
+
+/* Status Badges */
+.badge-pending  { background: rgba(245,158,11,0.2); color:#f59e0b; border:1px solid #f59e0b; }
+.badge-approved { background: rgba(34,197,94,0.2);  color:#22c55e; border:1px solid #22c55e; }
+.badge-rejected { background: rgba(239,68,68,0.2);  color:#ef4444; border:1px solid #ef4444; }
+
+.leave-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Table */
+.custom-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    color: white;
+}
+.custom-table thead th {
+    background: rgba(13,110,253,0.4);
+    padding: 12px;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 1px;
+    border: none;
+}
+.custom-table tbody tr {
+    background: rgba(255,255,255,0.05);
+    transition: 0.2s;
+}
+.custom-table tbody tr:hover {
+    background: rgba(255,255,255,0.10);
+}
+.custom-table td {
+    padding: 12px;
+    border: none;
+    vertical-align: middle;
+}
+
+/* Submit Button */
+.btn-submit-leave {
+    background: linear-gradient(135deg, #0d6efd, #2563eb);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 13px;
+    transition: 0.3s;
+}
+.btn-submit-leave:hover {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    transform: translateY(-2px);
+    color: white;
+}
+
+/* Logout */
+.btn-logout {
+    background: transparent;
+    border: 1px solid #ff4d4d;
+    color: #ff4d4d;
+    padding: 6px 18px;
+    border-radius: 8px;
+    transition: 0.3s;
+    cursor: pointer;
+}
+.btn-logout:hover {
+    background: #ff4d4d;
+    color: white;
+}
+
+/* Alert messages */
+.alert-eis {
+    border-radius: 10px;
+    padding: 12px 18px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+.alert-eis.success { background: rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; }
+.alert-eis.error   { background: rgba(239,68,68,0.15);  border:1px solid #ef4444; color:#ef4444; }
+
+/* Filter bar */
+.filter-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+.filter-bar select, .filter-bar input {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: white;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 13px;
+}
+.filter-bar select option { background: #112240; }

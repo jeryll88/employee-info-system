@@ -1,0 +1,161 @@
+/* Body & background */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0a192f, #112240);
+    color: white;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Grid overlay */
+body::before {
+    content: "";
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: 0;
+}
+
+/* Top Header */
+.top-header {
+    width: 100%;
+    padding: 25px 40px;
+    text-align: center;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #0d6efd;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    position: relative;
+    z-index: 1;
+}
+
+/* Info Card */
+.info-card {
+    position: relative;
+    width: 100%;
+    max-width: 1000px;
+    margin: auto;
+    padding: 50px;
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+    transition: all 0.4s ease;
+    z-index: 1;
+}
+
+.info-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 30px 70px rgba(0,0,0,0.7);
+}
+
+/* Section Title */
+.system-title {
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #0d6efd, #3b82f6);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+/* Search input */
+.search-input {
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 1px solid #2563eb;
+    background: rgba(255,255,255,0.05);
+    color: white;
+}
+
+.search-input::placeholder {
+    color: #cbd5e1;
+}
+
+/* Add Button */
+.add-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    font-size: 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #0d6efd, #2563eb);
+    border: none;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(13,110,253,0.4);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.add-btn:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 10px 25px rgba(13,110,253,0.6);
+}
+
+/* Table styling */
+.table-responsive {
+    border-radius: 15px;
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.table-custom {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: rgba(13, 110, 253, 0.08);
+    color: white;
+    font-weight: 500;
+}
+
+.table-custom thead tr {
+    background: linear-gradient(135deg, #0d6efd, #2563eb);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.table-custom th,
+.table-custom td {
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.table-custom tbody tr:hover {
+    background: rgba(13, 110, 253, 0.25);
+    transition: 0.3s;
+}
+
+/* Delete button style */
+.table-custom .btn-danger {
+    border-radius: 10px;
+    padding: 5px 10px;
+}
+
+/* Responsive adjustments */
+@media(max-width: 768px) {
+
+    .info-card {
+        padding: 25px 20px;
+    }
+
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .add-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+}
