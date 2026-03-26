@@ -250,6 +250,67 @@ def generate_payroll():
     emp_id = data.get('employee_id')
     if not emp_id: return jsonify({'error': 'Employee ID required'}), 400
     
+<<<<<<< HEAD
+    conn = get_db()
+    if not conn: return jsonify({'error': 'Database connection failed'}), 500
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # 1. Get latest service record for salary
+        cursor.execute('''
+            SELECT salary_range FROM service_records 
+            WHERE employee_id = %s 
+            ORDER BY date_from DESC LIMIT 1
+        ''', (emp_id,))
+        record = cursor.fetchone()
+        
+        base_salary = 0.0
+        if record and record['salary_range']:
+            # Simple parser for "25,000", "25000", or "25000-30000"
+            salary_str = record['salary_range'].split('-')[0].replace(',', '').strip()
+            try:
+                base_salary = float(salary_str)
+            except:
+                base_salary = 20000.0 # Fallback
+        else:
+            base_salary = 20000.0 # Default if no record
+            
+        # 2. Get attendance for current month
+        from datetime import datetime
+        now = datetime.now()
+        cursor.execute('''
+            SELECT COUNT(*) as days FROM attendance 
+            WHERE employee_id = %s 
+            AND MONTH(attendance_date) = %s 
+            AND YEAR(attendance_date) = %s
+        ''', (emp_id, now.month, now.year))
+        attendance = cursor.fetchone()
+        work_days = attendance['days'] if attendance else 0
+        
+        # 3. Calculation
+        # Assuming 22 standard work days. 
+        # Bonus of 100 per day present, flat deduction of 500.
+        allowance = work_days * 100.0
+        deductions = 500.0
+        tax = base_salary * 0.10
+        net_salary = base_salary + allowance - deductions - tax
+        
+        return jsonify({
+            'employee_id': emp_id,
+            'base_salary': f"{base_salary:,.2f}",
+            'work_days': work_days,
+            'allowance': f"{allowance:,.2f}",
+            'deductions': f"{deductions:,.2f}",
+            'tax': f"{tax:,.2f}",
+            'net_salary': f"{net_salary:,.2f}",
+            'currency': 'PHP'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+=======
     # Dummy calculation
     # In a real system, you'd fetch position/salary and attendance days
     net_salary = 25000.00 # Placeholder
@@ -259,6 +320,7 @@ def generate_payroll():
         'net_salary': f"{net_salary:,.2f}",
         'currency': 'PHP'
     })
+>>>>>>> d8128f0af5fa78bec8723d24d92619e2af6760f4
 
 # ─── Activities ──────────────────────────────────────────────
 @records_bp.route('/api/activities', methods=['GET'])

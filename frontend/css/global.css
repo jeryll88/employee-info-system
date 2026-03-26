@@ -147,6 +147,52 @@ body::before {
 .small { font-size: 0.875rem !important; }
 .smaller { font-size: 0.75rem !important; }
 
+<<<<<<< HEAD
+/* ─── Sidebar Buttons ─────────────────────────────────────── */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 15px;
+    border: 1px solid var(--glass-border);
+}
+
+.sidebar .btn {
+    text-align: left;
+    padding: 12px 20px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    border-radius: 12px;
+    font-weight: 600;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar .btn i {
+    font-size: 1.25rem;
+    color: var(--accent);
+    transition: var(--transition);
+}
+
+.sidebar .btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: var(--accent);
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px var(--accent-glow);
+}
+
+.sidebar .btn:hover i {
+    transform: scale(1.2);
+    color: #fff;
+}
+
+=======
+>>>>>>> d8128f0af5fa78bec8723d24d92619e2af6760f4
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
