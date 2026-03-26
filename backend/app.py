@@ -47,8 +47,13 @@ def get_db():
         return None
 
 def init_db():
+<<<<<<< HEAD
     schema_path = os.path.join(BASE_DIR, '..', 'db', 'mariadb_schema.sql')
     seed_path   = os.path.join(BASE_DIR, '..', 'db', 'mariadb_seed.sql')
+=======
+    schema_path = os.path.join(BASE_DIR, '..', 'sql', 'mariadb_schema.sql')
+    seed_path   = os.path.join(BASE_DIR, '..', 'sql', 'mariadb_seed.sql')
+>>>>>>> d8128f0af5fa78bec8723d24d92619e2af6760f4
     
     conn = mysql.connector.connect(**DB_CONFIG)
     cursor = conn.cursor()
