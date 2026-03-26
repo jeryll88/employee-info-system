@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Employee | Employee Information System</title>
+    <link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/global.css">
+    <script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="./js/api.js"></script>
+    <script src="./js/auth.js"></script>
+</head>
+<body>
+<div class="content container-fluid">
+    <div class="top-header mb-4">Employee Information System</div>
+
+    <div class="premium-card">
+        <h2 class="system-title text-center">ADD EMPLOYEE</h2>
+
+        <form id="addEmployeeForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Employee ID</label>
+                    <input type="text" class="form-control" id="empId" placeholder="e.g. EMP1001" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Birthday</label>
+                    <input type="date" class="form-control" id="birthday" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">First Name</label>
+                    <input type="text" class="form-control" id="firstName" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Middle Name</label>
+                    <input type="text" class="form-control" id="middleName">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" class="form-control" id="lastName" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Position</label>
+                    <input type="text" class="form-control" id="position">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Department</label>
+                    <input type="text" class="form-control" id="department">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Date Hired</label>
+                    <input type="date" class="form-control" id="dateHired">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="status" required>
+                        <option value="">Select status</option>
+                        <option>Active</option>
+                        <option>Permanent</option>
+                        <option>Temporary</option>
+                        <option>Separated</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i> Add Employee
+                </button>
+                <a href="employee_list.html" class="btn btn-secondary">
+                    <i class="bi bi-x-lg me-1"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    if (!requireRole('admin', 'hr')) {}
+
+    document.getElementById('addEmployeeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const payload = {
+            id: document.getElementById('empId').value.trim(),
+            first_name: document.getElementById('firstName').value.trim(),
+            middle_name: document.getElementById('middleName').value.trim(),
+            last_name: document.getElementById('lastName').value.trim(),
+            birthday: document.getElementById('birthday').value,
+            position: document.getElementById('position').value.trim(),
+            department: document.getElementById('department').value.trim(),
+            date_hired: document.getElementById('dateHired').value,
+            status: document.getElementById('status').value
+        };
+
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+        try {
+            await API.post('/api/employees', payload);
+            API.showToast("Employee added successfully!");
+            API.logActivity(`Created new employee record: ${payload.first_name} ${payload.last_name} (${payload.id})`);
+            
+            setTimeout(() => {
+                window.location.href = 'employee_list.html';
+            }, 1000);
+            
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-plus-circle me-1"></i> Add Employee';
+        }
+    });
+</script>
+</body>
+</html>

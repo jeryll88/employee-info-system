@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Training | Employee Information System</title>
+<link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="./css/global.css">
+<script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/edit_training.js"></script>
+</head>
+<body>
+
+<div class="container mt-5">
+    <div class="premium-card w-50 mx-auto">
+        <h2 class="system-title text-center mb-4">EDIT TRAINING</h2>
+        <form id="editTrainingForm">
+            <div class="mb-3">
+                <label class="form-label text-dim small">Training Title</label>
+                <input type="text" class="form-control" id="title" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label text-dim small">Date Conducted</label>
+                <input type="date" class="form-control" id="date" required>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-premium"><i class="bi bi-save"></i> Save Changes</button>
+                <a id="cancelBtn" href="trainings.html" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i> Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

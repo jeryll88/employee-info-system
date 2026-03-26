@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Information</title>
+<link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="./css/global.css">
+<script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/employee_info.js"></script>
+</head>
+<body>
+
+<!-- AUTH GUARD + OWN-PROFILE CHECK -->
+<script>
+if (!requireAuth()) {}
+</script>
+
+    <!-- Top Header -->
+    <div class="top-header">
+        EMPLOYEE INFORMATION SYSTEM
+    </div>
+
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-md-9 col-lg-10 content-area">
+                <div class="premium-card text-center">
+                    <!-- Back Button -->
+                    <div class="text-start mb-3">
+                        <button class="btn btn-premium btn-sm" onclick="goBack()">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </button>
+                    </div>
+
+                    <!-- Card Title -->
+                    <h2 class="system-title">
+                        EMPLOYEE INFORMATION SYSTEM
+                    </h2>
+
+                    <!-- Employee Details -->
+                    <div class="employee-number mb-4">
+                        Employee No: <strong id="empNumber"></strong>
+                    </div>
+
+                    <hr class="divider">
+
+                    <div class="row text-start mt-4">
+                        <div class="col-md-6 mb-3">
+                            <label class="label-title">Last Name</label>
+                            <div class="info-value" id="lastName"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="label-title">First Name</label>
+                            <div class="info-value" id="firstName"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="label-title">Birthday</label>
+                            <div class="info-value" id="birthday"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="label-title">Status</label>
+                            <div class="info-value" id="status"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="label-title">Position</label>
+                            <div class="info-value" id="position"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="label-title">Department</label>
+                            <div class="info-value" id="department"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar Buttons -->
+                <div class="sidebar mt-4">
+                    <button class="btn" onclick="goToTrainings()">
+                        <i class="bi bi-mortarboard-fill"></i> Trainings
+                    </button>
+                    <button class="btn" onclick="goToServiceRecords()">
+                        <i class="bi bi-briefcase-fill"></i> Service Records
+                    </button>
+                    <button class="btn" onclick="goToPayroll()">
+                        <i class="bi bi-wallet2"></i> Payroll
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// Own-profile guard for employee role
+(function() {
+    const user = getCurrentUser();
+    if (!user) return;
+    if (user.role === 'employee') {
+        const params   = new URLSearchParams(window.location.search);
+        const viewedId = params.get('id');
+        if (viewedId && viewedId !== user.employee_id) {
+            // Redirect employee to their own profile
+            window.location.replace(`employee_info.html?id=${user.employee_id}`);
+        }
+    }
+})();
+</script>
+
+</body>
+</html>

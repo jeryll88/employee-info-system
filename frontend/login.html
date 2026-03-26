@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Information System – Login</title>
+<link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="./css/global.css">
+<link rel="stylesheet" href="./css/login.css">
+<script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/auth.js"></script>
+</head>
+<body>
+
+<div class="login-box premium-card">
+
+    <!-- Logo / Title -->
+    <div class="login-logo">
+        <i class="bi bi-building-check"></i>
+    </div>
+    <h2>Employee Information System</h2>
+    <p class="login-subtitle">Secure access portal</p>
+
+    <form onsubmit="event.preventDefault(); handleLogin();">
+
+        <!-- Role Badge Selector -->
+        <div class="role-selector">
+            <label class="role-label"><i class="bi bi-shield-lock me-1"></i> Sign in as</label>
+            <div class="role-tabs" id="roleTabs">
+                <button type="button" class="role-tab active" data-role="admin"    onclick="selectRole('admin')">ADMIN</button>
+                <button type="button" class="role-tab"        data-role="hr"       onclick="selectRole('hr')">HR</button>
+                <button type="button" class="role-tab"        data-role="employee" onclick="selectRole('employee')">STAFF</button>
+            </div>
+        </div>
+
+        <div class="form-floating mb-3">
+            <input type="text" id="username" class="form-control" placeholder=" " required autocomplete="username">
+            <label for="username"><i class="bi bi-person me-2"></i>Username</label>
+        </div>
+
+        <div class="form-floating mb-4">
+            <input type="password" id="password" class="form-control" placeholder=" " required autocomplete="current-password">
+            <label for="password"><i class="bi bi-key me-2"></i>Password</label>
+        </div>
+
+        <div class="d-grid mt-4">
+            <button type="submit" class="btn btn-enterprise" id="loginBtn">
+                <i class="bi bi-box-arrow-in-right me-2"></i>LOGIN
+            </button>
+        </div>
+
+    </form>
+
+    <p class="error" id="errorMsg"></p>
+
+    <div class="secure-text">
+        <i class="bi bi-shield-lock-fill me-1"></i>
+        Secure access &bull; Encrypted session &bull; Monitored system
+    </div>
+
+</div>
+
+<script>
+let selectedRole = 'admin';
+
+function selectRole(role) {
+    selectedRole = role;
+    document.querySelectorAll('.role-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.role === role);
+    });
+    // Clear fields on role change
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+}
+
+// Pre-fill on load
+selectRole('admin');
+
+async function handleLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const errorMsg = document.getElementById('errorMsg');
+    const btn      = document.getElementById('loginBtn');
+
+    errorMsg.textContent = '';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Logging in...';
+
+    try {
+        const user = await authLogin(username, password);
+        // Redirect based on role
+        window.location.href = 'dashboard.html';
+    } catch (err) {
+        errorMsg.textContent = err.message;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>LOGIN';
+    }
+}
+</script>
+
+</body>
+</html>
