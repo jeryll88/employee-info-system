@@ -21,13 +21,10 @@
         <h3 class="system-title text-center mb-4">Add Service Record</h3>
 
         <form id="serviceForm">
-<<<<<<< HEAD
             <div class="mb-3">
                 <label class="form-label text-dim small">Employee ID</label>
                 <input type="text" id="displayEmpId" class="form-control" readonly style="background: rgba(255,255,255,0.05);">
             </div>
-=======
->>>>>>> d8128f0af5fa78bec8723d24d92619e2af6760f4
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label text-dim small">Designation</label>
@@ -83,10 +80,7 @@
 <script>
 const urlParams = new URLSearchParams(window.location.search);
 const empId = urlParams.get('empId');
-<<<<<<< HEAD
 document.getElementById('displayEmpId').value = empId;
-=======
->>>>>>> d8128f0af5fa78bec8723d24d92619e2af6760f4
 
 document.getElementById('serviceForm').addEventListener('submit', async (e) => {
     e.preventDefault();

@@ -21,8 +21,29 @@ def get_employees():
     role = session['user']['role']
     emp_id = session['user'].get('employee_id')
 
+    q = request.args.get('q', '').strip()
+    dept = request.args.get('department', '').strip()
+    pos = request.args.get('position', '').strip()
+    status = request.args.get('status', '').strip()
+
     if role in ('admin', 'hr'):
-        cursor.execute('SELECT * FROM employees ORDER BY last_name')
+        query = 'SELECT * FROM employees WHERE 1=1'
+        params = []
+        if q:
+            query += ' AND (last_name LIKE %s OR first_name LIKE %s OR id LIKE %s)'
+            params.extend([f'%{q}%', f'%{q}%', f'%{q}%'])
+        if dept:
+            query += ' AND department = %s'
+            params.append(dept)
+        if pos:
+            query += ' AND position = %s'
+            params.append(pos)
+        if status:
+            query += ' AND status = %s'
+            params.append(status)
+            
+        query += ' ORDER BY last_name'
+        cursor.execute(query, tuple(params))
         rows = cursor.fetchall()
     else:
         cursor.execute('SELECT * FROM employees WHERE id = %s', (emp_id,))
@@ -31,6 +52,37 @@ def get_employees():
     cursor.close()
     conn.close()
     return jsonify(rows)
+
+# ─── Get Next Employee ID (Auto-generation) ────────────────────
+@employees_bp.route('/api/employees/next-id', methods=['GET'])
+@require_auth
+def get_next_employee_id():
+    conn = get_db()
+    if not conn:
+        return jsonify({'error': 'Database connect failed'}), 500
+    
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT id FROM employees')
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    import re
+    max_num = 0
+    prefix = "EMP"
+    
+    for r in rows:
+        match = re.search(r'\d+', r['id'])
+        if match:
+            num = int(match.group())
+            if num > max_num:
+                max_num = num
+                
+    next_num = max_num + 1 if max_num > 0 else 1
+    next_id = f"{prefix}{next_num:03d}"
+    
+    return jsonify({'next_id': next_id})
+
 
 # ─── Get Single Employee ───────────────────────────────────────
 @employees_bp.route('/api/employees/<emp_id>', methods=['GET'])
@@ -82,10 +134,6 @@ def add_employee():
             data.get('status','Active'), data.get('position',''),
             data.get('department',''), data.get('date_hired','')
         ))
-        # Create leave balance for new employee
-        cursor.execute(
-            'INSERT IGNORE INTO leave_balances (employee_id) VALUES (%s)', (data['id'],)
-        )
         conn.commit()
     except Exception as e:
         cursor.close()
@@ -95,35 +143,61 @@ def add_employee():
     conn.close()
     return jsonify({'message': 'Employee added successfully'}), 201
 
-# ─── Update Employee (Admin, HR) ───────────────────────────────
+# ─── Update Employee (Admin, HR, or Self) ───────────────────────────────
 @employees_bp.route('/api/employees/<emp_id>', methods=['PUT'])
-@require_role('admin', 'hr')
+@require_auth
 def update_employee(emp_id):
+    role = session['user']['role']
+    my_emp = session['user'].get('employee_id')
+    
+    if role not in ('admin', 'hr'):
+        if role != 'employee' or my_emp != emp_id:
+            return jsonify({'error': 'Forbidden: Cannot edit other profiles'}), 403
+
     data = request.get_json()
     conn = get_db()
     if not conn:
         return jsonify({'error': 'Database connection failed'}), 500
         
     cursor = conn.cursor()
-    cursor.execute('''
-        UPDATE employees SET
-            last_name   = COALESCE(%s, last_name),
-            first_name  = COALESCE(%s, first_name),
-            middle_name = COALESCE(%s, middle_name),
-            birthday    = COALESCE(%s, birthday),
-            status      = COALESCE(%s, status),
-            position    = COALESCE(%s, position),
-            department  = COALESCE(%s, department),
-            date_hired  = COALESCE(%s, date_hired),
-            updated_at  = CURRENT_TIMESTAMP
-        WHERE id = %s
-    ''', (
-        data.get('last_name'), data.get('first_name'),
-        data.get('middle_name'), data.get('birthday'),
-        data.get('status'), data.get('position'),
-        data.get('department'), data.get('date_hired'),
-        emp_id
-    ))
+    
+    if role == 'employee':
+        # Staff can only update personal details, not status/position/department/hired date
+        cursor.execute('''
+            UPDATE employees SET
+                last_name   = COALESCE(%s, last_name),
+                first_name  = COALESCE(%s, first_name),
+                middle_name = COALESCE(%s, middle_name),
+                birthday    = COALESCE(%s, birthday),
+                updated_at  = CURRENT_TIMESTAMP
+            WHERE id = %s
+        ''', (
+            data.get('last_name'), data.get('first_name'),
+            data.get('middle_name'), data.get('birthday'),
+            emp_id
+        ))
+    else:
+        # Admin / HR full update
+        cursor.execute('''
+            UPDATE employees SET
+                last_name   = COALESCE(%s, last_name),
+                first_name  = COALESCE(%s, first_name),
+                middle_name = COALESCE(%s, middle_name),
+                birthday    = COALESCE(%s, birthday),
+                status      = COALESCE(%s, status),
+                position    = COALESCE(%s, position),
+                department  = COALESCE(%s, department),
+                date_hired  = COALESCE(%s, date_hired),
+                updated_at  = CURRENT_TIMESTAMP
+            WHERE id = %s
+        ''', (
+            data.get('last_name'), data.get('first_name'),
+            data.get('middle_name'), data.get('birthday'),
+            data.get('status'), data.get('position'),
+            data.get('department'), data.get('date_hired'),
+            emp_id
+        ))
+        
     conn.commit()
     cursor.close()
     conn.close()

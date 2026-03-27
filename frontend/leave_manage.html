@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Leave Management | Employee Information System</title>
+<title>Leave Management | HR Portal</title>
 <link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="./css/global.css">
@@ -11,276 +11,93 @@
 <script src="./js/api.js"></script>
 <script src="./js/auth.js"></script>
 </head>
-<body>
+<body class="fade-in">
+<script>
+    if (!requireRole('admin', 'hr')) {}
+</script>
 
-<!-- AUTH GUARD: Admin/HR only -->
-<script>if (!requireRole('admin', 'hr')) {}</script>
-
-<div class="content container-fluid">
-
+<div class="content container-fluid" style="max-width:1200px;">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <div class="page-title">
-            <i class="bi bi-calendar2-check"></i> Leave Management
-        </div>
-        <div class="d-flex align-items-center gap-3">
-            <div id="userInfo" style="font-size:14px;color:white;"></div>
-            <button class="btn-logout" onclick="authLogout()">
-                <i class="bi bi-box-arrow-right me-1"></i>Logout
-            </button>
-        </div>
+        <h2 class="system-title">
+            <i class="bi bi-calendar3 me-2"></i> Employee Leave Index
+        </h2>
+        <button class="btn-secondary-custom btn-sm" onclick="window.location.href='dashboard.html'">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </button>
     </div>
 
-    <!-- Nav -->
-    <div class="row g-3 mb-4" id="navBar"></div>
-
-    <!-- Summary Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="premium-card text-center py-4" style="border-top: 3px solid #f59e0b;">
-                <i class="bi bi-hourglass-split fs-3 mb-2 d-block" style="color:#f59e0b;"></i>
-                <div class="text-dim small text-uppercase ls-1">Pending</div>
-                <div class="h2 fw-bold text-warning mb-0" id="countPending">0</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="premium-card text-center py-4" style="border-top: 3px solid #22c55e;">
-                <i class="bi bi-check-circle fs-3 mb-2 d-block text-success"></i>
-                <div class="text-dim small text-uppercase ls-1">Approved</div>
-                <div class="h2 fw-bold text-success mb-0" id="countApproved">0</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="premium-card text-center py-4" style="border-top: 3px solid #ef4444;">
-                <i class="bi bi-x-circle fs-3 mb-2 d-block text-danger"></i>
-                <div class="text-dim small text-uppercase ls-1">Rejected</div>
-                <div class="h2 fw-bold text-danger mb-0" id="countRejected">0</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="premium-card text-center py-4" style="border-top: 3px solid var(--primary);">
-                <i class="bi bi-people fs-3 mb-2 d-block text-primary"></i>
-                <div class="text-dim small text-uppercase ls-1">Total</div>
-                <div class="h2 fw-bold text-primary mb-0" id="countTotal">0</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filter Bar -->
-    <div class="premium-card mb-4 p-3 bg-opacity-10" style="background: rgba(255,255,255,0.03);">
-        <div class="row g-3 align-items-center">
-            <div class="col-md-3">
-                <select id="filterStatus" class="form-select bg-dark text-white border-secondary" onchange="applyFilters()">
-                    <option value="">All Statuses</option>
-                    <option>Pending</option>
-                    <option>Approved</option>
-                    <option>Rejected</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select id="filterType" class="form-select bg-dark text-white border-secondary" onchange="applyFilters()">
-                    <option value="">All Types</option>
-                    <option>Sick Leave</option>
-                    <option>Vacation Leave</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <div class="input-group">
-                    <span class="input-group-text bg-dark border-secondary text-dim"><i class="bi bi-search"></i></span>
-                    <input type="text" id="filterSearch" class="form-control bg-dark text-white border-secondary" placeholder="Search employee..." oninput="applyFilters()">
-                </div>
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
-                    <i class="bi bi-arrow-counterclockwise"></i> Reset
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Leave Requests Table -->
-    <div class="premium-card">
-        <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0" style="--bs-table-bg: transparent;">
-                <thead>
-                    <tr class="text-dim small text-uppercase">
-                        <th>#</th>
-                        <th>Employee</th>
-                        <th>Type</th>
-                        <th>Period</th>
-                        <th>Days</th>
-                        <th>Reason</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="leaveTableBody" class="align-middle">
-                    <tr><td colspan="8" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-</div>
-
-<!-- Remarks Modal -->
-<div class="modal fade" id="remarksModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="background:#112240;color:white;border:1px solid rgba(255,255,255,0.15);border-radius:15px;">
-            <div class="modal-header" style="border-color:rgba(255,255,255,0.1);">
-                <h5 class="modal-title" id="modalTitle"></h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <label style="font-size:12px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Remarks (optional)</label>
-                <textarea class="form-control mt-2" id="modalRemarks" rows="3"
-                    style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:white;border-radius:10px;"
-                    placeholder="Add a note..."></textarea>
-            </div>
-            <div class="modal-footer" style="border-color:rgba(255,255,255,0.1);">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button class="btn" id="modalConfirmBtn" onclick="confirmAction()">Confirm</button>
-            </div>
-        </div>
+    <!-- Leaves Table -->
+    <div class="table-responsive bg-dark rounded p-3 border border-secondary shadow-lg">
+        <table class="table table-dark table-hover text-center align-middle">
+            <thead>
+                <tr class="text-dim small text-uppercase">
+                    <th>Ticket</th>
+                    <th>Employee ID</th>
+                    <th>Type</th>
+                    <th>Duration (Dates)</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="leaveTableBody">
+                <tr><td colspan="7" class="text-dim py-4">Loading requests...</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
-
 
 <script>
-const user = getCurrentUser();
-let allLeaves     = [];
-let pendingAction = null; // { leaveId, action }
-
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('navBar').innerHTML  = buildNav(user.role, 'leave_manage.html');
-    document.getElementById('userInfo').innerHTML =
-        `<span style="color:#9ca3af">Logged in as <strong style="color:white">${user.username}</strong></span>
-         &nbsp;${getRoleBadgeHtml(user.role)}`;
-    loadLeaves();
-});
+document.addEventListener('DOMContentLoaded', loadLeaves);
 
 async function loadLeaves() {
-    try {
-        allLeaves = await API.get('/api/leave');
-        updateSummaryCards();
-        applyFilters();
-    } catch(e) {
-        document.getElementById('leaveTableBody').innerHTML =
-            '<tr><td colspan="8" class="text-danger text-center py-4">Could not load leave records.</td></tr>';
-    }
-}
-
-function updateSummaryCards() {
-    document.getElementById('countTotal').textContent    = allLeaves.length;
-    document.getElementById('countPending').textContent  = allLeaves.filter(l=>l.status==='Pending').length;
-    document.getElementById('countApproved').textContent = allLeaves.filter(l=>l.status==='Approved').length;
-    document.getElementById('countRejected').textContent = allLeaves.filter(l=>l.status==='Rejected').length;
-}
-
-function applyFilters() {
-    const status = document.getElementById('filterStatus').value;
-    const type   = document.getElementById('filterType').value;
-    const search = document.getElementById('filterSearch').value.toLowerCase();
-
-    const filtered = allLeaves.filter(l => {
-        const name = `${l.first_name||''} ${l.last_name||''}`.toLowerCase();
-        return (!status || l.status === status)
-            && (!type   || l.leave_type === type)
-            && (!search || name.includes(search) || l.employee_id.toLowerCase().includes(search));
-    });
-
-    renderLeaves(filtered);
-}
-
-function resetFilters() {
-    document.getElementById('filterStatus').value = '';
-    document.getElementById('filterType').value   = '';
-    document.getElementById('filterSearch').value = '';
-    applyFilters();
-}
-
-function renderLeaves(list) {
     const tbody = document.getElementById('leaveTableBody');
-    tbody.innerHTML = '';
-    if (list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-dim py-5">No leave requests found.</td></tr>';
-        return;
-    }
-    list.forEach((l, i) => {
-        const statusBadge = {
-            Pending:  '<span class="badge rounded-pill bg-warning bg-opacity-10 text-warning px-3">Pending</span>',
-            Approved: '<span class="badge rounded-pill bg-success bg-opacity-10 text-success px-3">Approved</span>',
-            Rejected: '<span class="badge rounded-pill bg-danger bg-opacity-10 text-danger px-3">Rejected</span>'
-        }[l.status] || l.status;
-
-        const name = `<div class="fw-bold">${l.first_name || ''} ${l.last_name || ''}</div><div class="text-dim smaller">${l.employee_id}</div>`;
-
-        let actions = '';
-        if (l.status === 'Pending') {
-            actions = `
-                <div class="d-flex gap-1">
-                    <button class="btn btn-sm btn-outline-success" onclick="openModal(${l.id},'approve')"><i class="bi bi-check"></i></button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="openModal(${l.id},'reject')"><i class="bi bi-x"></i></button>
-                </div>`;
-        } else {
-            actions = `<div class="text-dim smaller"><i class="bi bi-person-check me-1"></i>${l.reviewed_by || 'System'}</div>`;
+    try {
+        const leaves = await API.get('/api/leave');
+        if (leaves.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-dim py-4">No leave requests found.</td></tr>';
+            return;
         }
 
-        tbody.innerHTML += `
+        tbody.innerHTML = leaves.map(l => {
+            const badgeClass = l.status === 'Approved' ? 'success' : l.status === 'Rejected' ? 'danger' : 'warning text-dark';
+            return `
             <tr>
-                <td><span class="text-dim">${i+1}</span></td>
-                <td>${name}</td>
-                <td><span class="small">${l.leave_type}</span></td>
+                <td class="text-dim">#${l.id}</td>
+                <td class="fw-bold">${l.employee_id}</td>
+                <td><span class="badge border border-light text-light px-2 py-1">${l.leave_type}</span></td>
+                <td class="small">${l.date_from} <i class="bi bi-arrow-right text-dim mx-1"></i> ${l.date_to}</td>
+                <td class="small text-truncate" style="max-width: 250px;" title="${l.reason}">${l.reason}</td>
+                <td><span class="badge bg-${badgeClass} p-2">${l.status}</span></td>
                 <td>
-                    <div class="small">${l.start_date}</div>
-                    <div class="text-dim smaller">to ${l.end_date}</div>
+                    ${l.status === 'Pending' ? `
+                        <button class="btn btn-sm btn-success py-1 px-2 me-1" onclick="updateLeave(${l.id}, 'Approved')" title="Approve">
+                            <i class="bi bi-check-lg"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger py-1 px-2" onclick="updateLeave(${l.id}, 'Rejected')" title="Reject">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    ` : '<span class="text-dim small">Reviewed</span>'}
                 </td>
-                <td><span class="fw-bold">${l.num_days}</span></td>
-                <td class="text-dim small">${l.reason || '—'}</td>
-                <td>${statusBadge}</td>
-                <td>${actions}</td>
-            </tr>`;
-    });
-}
+            </tr>
+            `;
+        }).join('');
 
-function openModal(leaveId, action) {
-    pendingAction = { leaveId, action };
-    const isApprove = (action === 'approve');
-    document.getElementById('modalTitle').textContent =
-        isApprove ? 'Approve Leave Request' : 'Reject Leave Request';
-    document.getElementById('modalRemarks').value = '';
-    const confirmBtn = document.getElementById('modalConfirmBtn');
-    confirmBtn.className = `btn ${isApprove ? 'btn-premium' : 'btn-danger'}`;
-    confirmBtn.textContent = isApprove ? 'Approve Request' : 'Reject Request';
-    new bootstrap.Modal(document.getElementById('remarksModal')).show();
-}
-
-async function confirmAction() {
-    if (!pendingAction) return;
-    const { leaveId, action } = pendingAction;
-    const remarks = document.getElementById('modalRemarks').value;
-
-    const modal = bootstrap.Modal.getInstance(document.getElementById('remarksModal'));
-    const btn = document.getElementById('modalConfirmBtn');
-    btn.disabled = true;
-
-    try {
-        await API.put(`/api/leave/${leaveId}/${action}`, { remarks });
-        API.showToast(`Leave request ${action}d!`);
-        API.logActivity(`${action.toUpperCase()}D leave request for ID ${leaveId}`);
-        modal.hide();
-        await loadLeaves();
-    } catch(e) {}
-    finally {
-        btn.disabled = false;
-        pendingAction = null;
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-danger py-4">Failed to load system leaves.</td></tr>';
     }
 }
 
-function showAlert(msg, type) {
-    const box = document.getElementById('alertBox');
-    box.innerHTML = `<div class="alert-eis ${type}">${msg}</div>`;
-    setTimeout(() => box.innerHTML = '', 4000);
+async function updateLeave(id, newStatus) {
+    if(!confirm(`Mark request #${id} as ${newStatus}?`)) return;
+    try {
+        await API.put(`/api/leave/${id}`, { status: newStatus });
+        API.showToast(`Request #${id} marked as ${newStatus}.`, "success");
+        loadLeaves();
+    } catch (err) {
+        alert(err.message);
+    }
 }
 </script>
 </body>

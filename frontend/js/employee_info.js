@@ -45,3 +45,8 @@ function goToPayroll() {
     const id = new URLSearchParams(window.location.search).get('id');
     window.location.href = `payroll.html?id=${id}`;
 }
+
+function goToPerformance() {
+    const id = new URLSearchParams(window.location.search).get('id');
+    window.location.href = `performance.html?id=${id}`;
+}

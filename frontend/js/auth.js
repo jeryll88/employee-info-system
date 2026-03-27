@@ -57,14 +57,21 @@ async function authLogout() {
 
 // ─── Navigation Builder ───────────────────────────────────────
 function buildNav(role, activePage) {
+    const user = getCurrentUser();
     const navItems = [
         { label: 'DASHBOARD',       href: 'dashboard.html',    roles: ['admin','hr','employee'] },
-        { label: 'EMPLOYEES',       href: 'employee_list.html',roles: ['admin','hr','employee'] },
-        { label: 'LEAVE REQUEST',   href: 'leave_request.html',roles: ['employee'] },
-        { label: 'LEAVE MANAGEMENT',href: 'leave_manage.html', roles: ['admin','hr'] },
+        { label: 'DIRECTORY',       href: 'employee_list.html',roles: ['admin','hr'] },
         { label: 'ATTENDANCE',      href: 'attendance.html',   roles: ['admin','hr','employee'] },
-        { label: 'PAYROLL',         href: 'payroll.html',      roles: ['admin','hr'] },
+        { label: 'LEAVE REQUEST',   href: 'leave_request.html',roles: ['employee'] },
+        { label: 'LEAVES',          href: 'leave_manage.html', roles: ['admin','hr'] },
+        { label: 'PAYROLL',         href: 'payroll.html',      roles: ['admin','hr','employee'] },
+        { label: 'USERS',           href: 'users.html',        roles: ['admin'] },
+        { label: 'SETTINGS',        href: 'settings.html',     roles: ['admin'] }
     ];
+    
+    if (user && user.role === 'employee') {
+        navItems.splice(1, 0, { label: 'MY PROFILE', href: `employee_info.html?id=${user.employee_id}`, roles: ['employee'] });
+    }
 
     return navItems
         .filter(item => item.roles.includes(role))

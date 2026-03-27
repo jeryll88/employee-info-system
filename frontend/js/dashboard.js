@@ -30,19 +30,39 @@ function initDashboardUI(user) {
     }
 
     // Role-based sections
+    const adminOnlySections = ['statusBoxesSection'];
+    adminOnlySections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && user.role === 'employee') {
+            el.style.setProperty('display', 'none', 'important');
+        }
+    });
+
+    if (user.role !== 'admin') {
+        const activityLog = document.getElementById('recentActivitiesSection');
+        if (activityLog) activityLog.style.setProperty('display', 'none', 'important');
+    }
+
+    const empWelcome = document.getElementById('employeeWelcomeSection');
+    const empBtn = document.getElementById('empProfileBtn');
     const leaveSection = document.getElementById('leaveBalanceSection');
-    if (leaveSection) {
-        leaveSection.classList.toggle('d-none', user.role !== 'employee');
+    if (user.role === 'employee') {
+        if (empWelcome) empWelcome.style.display = 'block';
+        if (empBtn) empBtn.href = `employee_info.html?id=${user.employee_id}`;
+        if (leaveSection) leaveSection.style.display = 'flex';
     }
 }
 
 async function refreshDashboardData(user) {
     try {
-        await Promise.all([
-            loadEmployeeStats(),
-            loadActivities(),
-            user.role === 'employee' ? loadLeaveBalance() : Promise.resolve()
-        ]);
+        if (user.role === 'admin' || user.role === 'hr') {
+            await Promise.all([
+                loadEmployeeStats(),
+                loadActivities()
+            ]);
+        } else if (user.role === 'employee') {
+            await loadLeaveBalance();
+        }
     } catch (err) {
         console.error("Dashboard refresh failed:", err);
     }
@@ -105,5 +125,12 @@ async function loadActivities() {
 }
 
 async function clearActivities() {
-    API.showToast("Activity history is managed by the system administrator.", "info");
+    if (!confirm('Are you sure you want to permanently delete all system activity logs? This action cannot be undone.')) return;
+    try {
+        await API.delete('/api/activities');
+        API.showToast("Activity history has been permanently cleared.", "success");
+        loadActivities();
+    } catch (e) {
+        // Errors are natively caught and toasted by our HTTP handler
+    }
 }

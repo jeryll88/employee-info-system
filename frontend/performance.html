@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Performance Reviews | Employee Information System</title>
+<link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="./css/global.css">
+<script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/auth.js"></script>
+</head>
+<body>
+<div class="top-header">EMPLOYEE INFORMATION SYSTEM</div>
+
+<div class="container-fluid mt-4" style="max-width:1200px;">
+  <div class="premium-card glass-card p-4 rounded form-control-custom">
+    <h2 class="page-title text-center mb-4">PERFORMANCE REVIEWS</h2>
+
+    <!-- Back Button -->
+    <div class="mb-3">
+      <button class="btn-secondary-custom btn-sm" onclick="goBack()">
+        <i class="bi bi-arrow-left"></i> Back to Profile
+      </button>
+    </div>
+
+    <!-- Add Evaluation -->
+    <div class="d-flex justify-content-end mb-3">
+      <button class="btn-primary-custom" id="addBtn" onclick="showAddEvalForm()">
+        <i class="bi bi-plus-circle me-1"></i> Add Review
+      </button>
+    </div>
+
+    <!-- Evaluations Table -->
+    <div class="table-responsive bg-dark rounded p-2 border border-secondary">
+      <table class="table table-dark table-hover text-center align-middle" id="evalsTable">
+        <thead>
+          <tr class="text-muted text-uppercase small">
+            <th>Date</th>
+            <th>Reviewer</th>
+            <th>Rating</th>
+            <th>Comments</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Add Eval Form -->
+    <div id="addEvalForm" style="display:none; margin-top:20px;" class="p-3 bg-dark border border-secondary rounded">
+      <h5 class="mb-3 text-white"><i class="bi bi-pencil-square me-2"></i>New Performance Review</h5>
+      <div class="row g-2 mb-2">
+        <div class="col-md-6">
+          <label class="text-dim small mb-1">Date</label>
+          <input type="date" id="evalDate" class="form-control bg-dark text-white border-secondary" required>
+        </div>
+        <div class="col-md-6">
+          <label class="text-dim small mb-1">Rating (1-5)</label>
+          <input type="number" step="0.1" min="1" max="5" id="evalRating" class="form-control bg-dark text-white border-secondary" required>
+        </div>
+      </div>
+      <div class="mb-3 mt-3">
+        <label class="text-dim small mb-1">Comments</label>
+        <textarea id="evalComments" class="form-control bg-dark text-white border-secondary" rows="2"></textarea>
+      </div>
+      <button class="btn btn-success me-2 px-4" onclick="saveEvaluation()">Save</button>
+      <button class="btn btn-secondary px-4" onclick="hideAddEvalForm()">Cancel</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+if (!requireAuth()) {}
+
+const urlParams = new URLSearchParams(window.location.search);
+const empId = urlParams.get('id');
+const user  = getCurrentUser();
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!empId) {
+        alert("No employee specified");
+        window.location.href = "employee_list.html";
+        return;
+    }
+    loadEvaluations();
+    
+    // Admins and HR can add reviews.
+    if (user.role === 'employee') {
+        document.getElementById('addBtn').style.display = 'none';
+        if (user.employee_id !== empId) {
+            window.location.replace(`employee_info.html?id=${user.employee_id}`);
+        }
+    }
+});
+
+function goBack() {
+    window.location.href = `employee_info.html?id=${empId}`;
+}
+
+function showAddEvalForm() {
+    document.getElementById('addEvalForm').style.display = 'block';
+    document.getElementById('evalDate').value = new Date().toISOString().split('T')[0];
+}
+
+function hideAddEvalForm() {
+    document.getElementById('addEvalForm').style.display = 'none';
+    document.getElementById('evalDate').value = '';
+    document.getElementById('evalRating').value = '';
+    document.getElementById('evalComments').value = '';
+}
+
+async function loadEvaluations() {
+    const tableBody = document.querySelector("#evalsTable tbody");
+    try {
+        const list = await API.get(`/api/performance?employee_id=${empId}`);
+        
+        tableBody.innerHTML = '';
+        if (list.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="5" class="py-4 text-dim">No performance reviews logged yet.</td></tr>`;
+            return;
+        }
+
+        list.forEach(e => {
+            tableBody.innerHTML += `
+                <tr>
+                    <td class="text-dim">${e.evaluation_date}</td>
+                    <td class="fw-bold">${e.reviewer}</td>
+                    <td><span class="badge bg-success p-2"><i class="bi bi-star-fill me-1"></i>${e.rating}</span></td>
+                    <td style="white-space:normal; max-width:250px;" class="small">${e.comments || '—'}</td>
+                    <td>
+                        <div class="d-flex justify-content-center gap-2">
+                            ${user.role === 'admin' ? `
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteEvaluation(${e.id})" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            ` : '—'}
+                        </div>
+                    </td>
+                </tr>`;
+        });
+    } catch (err) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-danger">Error loading data</td></tr>`;
+    }
+}
+
+async function saveEvaluation() {
+    const date = document.getElementById('evalDate').value;
+    const rating = document.getElementById('evalRating').value;
+    const comments = document.getElementById('evalComments').value;
+
+    if (!date || !rating) {
+        API.showToast("Please provide date and rating", "warning");
+        return;
+    }
+
+    try {
+        await API.post('/api/performance', { 
+            employee_id: empId, 
+            evaluation_date: date, 
+            rating: parseFloat(rating), 
+            comments: comments, 
+            reviewer: user.username 
+        });
+        API.showToast(`Review added successfully!`);
+        hideAddEvalForm();
+        loadEvaluations();
+    } catch (err) {}
+}
+
+async function deleteEvaluation(id) {
+    if (!confirm(`Delete this performance review permanently?`)) return;
+    try {
+        await API.delete(`/api/performance/${id}`);
+        API.showToast(`Review deleted`);
+        loadEvaluations();
+    } catch (err) {}
+}
+</script>
+</body>
+</html>

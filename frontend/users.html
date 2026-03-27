@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Management | Admin Portal</title>
+<link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="./css/global.css">
+<script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/auth.js"></script>
+</head>
+<body class="fade-in">
+<script>
+    if (!requireRole('admin')) {}
+</script>
+
+<div class="content container-fluid" style="max-width:1200px;">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h2 class="system-title">
+            <i class="bi bi-shield-lock-fill me-2"></i> User Account Management
+        </h2>
+        <button class="btn-secondary-custom btn-sm" onclick="window.location.href='dashboard.html'">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </button>
+    </div>
+
+    <!-- Add User Form -->
+    <div class="clean-card mb-4 border border-secondary" style="background: rgba(0,0,0,0.2);">
+        <h5 class="text-white mb-3"><i class="bi bi-person-plus-fill me-2"></i>Create New User Account</h5>
+        <form id="addUserForm" onsubmit="createUser(event)">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label-custom">Username</label>
+                    <input type="text" id="newUsername" class="form-control-custom" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-custom">Password</label>
+                    <input type="password" id="newPassword" class="form-control-custom" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-custom">System Role</label>
+                    <select id="newRole" class="form-control-custom" required>
+                        <option value="employee">Staff</option>
+                        <option value="hr">HR</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-custom">Employee ID Link</label>
+                    <input type="text" id="newEmpId" class="form-control-custom" placeholder="e.g. EMP001">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn-primary-custom w-100" id="btnCreate">Create</button>
+                </div>
+            </div>
+            <div id="addMsg" class="mt-2 small fw-medium text-danger"></div>
+        </form>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-responsive bg-dark rounded p-3 border border-secondary shadow-lg">
+        <table class="table table-dark table-hover text-center align-middle">
+            <thead>
+                <tr class="text-dim small text-uppercase">
+                    <th>Account ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Linked Employee profile</th>
+                    <th>Registered</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="usersListBody">
+                <tr><td colspan="6" class="text-dim py-4">Loading accounts...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', loadUsers);
+
+async function loadUsers() {
+    const tbody = document.getElementById('usersListBody');
+    try {
+        const users = await API.get('/api/users');
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-dim py-4">No accounts found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = users.map(u => `
+            <tr>
+                <td class="text-dim">#${u.id}</td>
+                <td class="fw-bold">${u.username}</td>
+                <td>${getRoleBadgeHtml(u.role)}</td>
+                <td><span class="badge bg-secondary border border-light text-light px-2 py-1">${u.employee_id || 'unlinked'}</span></td>
+                <td class="text-dim small">${u.created_at || '—'}</td>
+                <td>
+                    ${u.role !== 'admin' || u.id !== getCurrentUser().id ? `
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${u.id}, '${u.username}')" title="Revoke Account">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                    ` : '<span class="text-dim small">Current Session</span>'}
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-danger py-4">Failed to load system accounts.</td></tr>';
+    }
+}
+
+async function createUser(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnCreate');
+    const msg = document.getElementById('addMsg');
+    
+    btn.disabled = true;
+    msg.innerText = '';
+    
+    const payload = {
+        username: document.getElementById('newUsername').value.trim(),
+        password: document.getElementById('newPassword').value.trim(),
+        role: document.getElementById('newRole').value,
+        employee_id: document.getElementById('newEmpId').value.trim() || null
+    };
+
+    try {
+        await API.post('/api/users', payload);
+        document.getElementById('addUserForm').reset();
+        API.showToast("Account successfully created!", "success");
+        loadUsers();
+    } catch (err) {
+        msg.innerText = err.message || "Failed to create account.";
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function deleteUser(id, username) {
+    if(!confirm(`Are you absolutely sure you want to permanently revoke system access for "${username}"?`)) return;
+    try {
+        await API.delete(`/api/users/${id}`);
+        API.showToast(`Account revoked.`);
+        loadUsers();
+    } catch (err) {
+        alert(err.message);
+    }
+}
+</script>
+</body>
+</html>
