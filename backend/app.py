@@ -15,6 +15,8 @@ app.secret_key = "eis_secret_key_2026"
 CORS(app, supports_credentials=True, origins=[
     "http://localhost:5000",
     "http://127.0.0.1:5000",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
     "http://localhost",
     "http://127.0.0.1",
     "null" # For file-based access during transition
@@ -47,13 +49,8 @@ def get_db():
         return None
 
 def init_db():
-<<<<<<< HEAD
     schema_path = os.path.join(BASE_DIR, '..', 'db', 'mariadb_schema.sql')
     seed_path   = os.path.join(BASE_DIR, '..', 'db', 'mariadb_seed.sql')
-=======
-    schema_path = os.path.join(BASE_DIR, '..', 'sql', 'mariadb_schema.sql')
-    seed_path   = os.path.join(BASE_DIR, '..', 'sql', 'mariadb_seed.sql')
->>>>>>> d8128f0af5fa78bec8723d24d92619e2af6760f4
     
     conn = mysql.connector.connect(**DB_CONFIG)
     cursor = conn.cursor()
@@ -88,14 +85,16 @@ def index():
 # Blueprints will follow
 
 # ─── Register blueprints ───────────────────────────────────────
-from auth      import auth_bp
-from employees import employees_bp
-from leave     import leave_bp
-from records   import records_bp
+from auth        import auth_bp
+from employees   import employees_bp
+from performance import performance_bp
+from dashboard   import dashboard_bp
+from records     import records_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(employees_bp)
-app.register_blueprint(leave_bp)
+app.register_blueprint(performance_bp)
+app.register_blueprint(dashboard_bp)
 app.register_blueprint(records_bp)
 
 # ─── Run ───────────────────────────────────────────────────────

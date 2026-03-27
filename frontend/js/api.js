@@ -3,11 +3,15 @@
  * Centralized API utility for Employee Information System.
  */
 
+const API_BASE = ''; // Uses relative execution relative to browser URL
+
 const API = {
     /**
      * Enhanced fetch wrapper
      */
-    async request(url, options = {}) {
+    async request(endpoint, options = {}) {
+        const url = API_BASE + endpoint;
+        
         const defaultOptions = {
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' }
@@ -20,7 +24,7 @@ const API = {
 
         try {
             const response = await fetch(url, mergedOptions);
-            const data = await response.json();
+            const data = await response.json().catch(() => ({ error: 'Invalid server response' }));
 
             if (!response.ok) {
                 const errorMsg = data.error || data.message || `Request failed (${response.status})`;
@@ -33,7 +37,7 @@ const API = {
             }
             return data;
         } catch (error) {
-            console.error(`API Error [${url}]:`, error);
+            console.error(`API Error [${endpoint}]:`, error);
             throw error;
         }
     },

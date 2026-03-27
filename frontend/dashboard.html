@@ -38,8 +38,51 @@
     <!-- Navigation (role-aware) -->
     <div class="row g-3 mb-4" id="navBar"></div>
 
+    <!-- Leave Balance (shown only for employee role) -->
+    <div class="row g-4 mb-5" id="leaveBalanceSection" style="display:none;">
+        <div class="col-12">
+            <div class="glass-card border border-secondary">
+                <h5 class="mb-3 text-white"><i class="bi bi-calendar-check text-primary me-2"></i>My Leave Balance</h5>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="glass-card text-center" style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3);">
+                            <i class="bi bi-heart-pulse fs-3 text-success"></i>
+                            <div class="mt-2 text-dim" style="font-size:13px; font-weight:600;">SICK LEAVE</div>
+                            <div class="stat-number text-success" id="sickBalance">–</div>
+                            <div style="font-size:11px;color:#9ca3af;">days remaining</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="glass-card text-center" style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3);">
+                            <i class="bi bi-umbrella fs-3 text-primary"></i>
+                            <div class="mt-2 text-dim" style="font-size:13px; font-weight:600;">VACATION LEAVE</div>
+                            <div class="stat-number text-primary" id="vacationBalance">–</div>
+                            <div style="font-size:11px;color:#9ca3af;">days remaining</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-center">
+                        <a href="leave_request.html" class="btn btn-primary w-100 shadow-lg" style="border-radius:12px;padding:25px;font-weight:700;letter-spacing:1px;font-size:1.1rem;">
+                            <i class="bi bi-plus-circle me-2"></i>FILE A LEAVE REQUEST
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Welcome Section -->
+    <div id="employeeWelcomeSection" class="row justify-content-center" style="display:none;">
+        <div class="col-md-8 text-center mt-5 mb-5 pb-5 pt-5">
+            <h1 class="display-4 fw-bold text-white mb-3">Welcome to your Portal</h1>
+            <p class="lead text-dim mb-5">Access your personal information, service records, track performance evaluations, and manage your employment profile securely.</p>
+            <a href="#" id="empProfileBtn" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-lg" style="font-weight:600; letter-spacing:1px; background:var(--primary); border:none;">
+                <i class="bi bi-person-badge-fill me-2"></i> View My Profile
+            </a>
+        </div>
+    </div>
+
     <!-- Statistics -->
-    <div class="row g-4 mb-5">
+    <div class="row g-4 mb-5" id="statusBoxesSection">
         <div class="col-md-3">
             <div class="glass-card stat-box stat-active">
                 <i class="bi bi-person-check fs-3"></i>
@@ -70,38 +113,55 @@
         </div>
     </div>
 
-    <!-- Leave Balance (shown only for employee role) -->
-    <div class="row g-4 mb-5" id="leaveBalanceSection" style="display:none!important">
-        <div class="col-12">
-            <div class="glass-card">
-                <h5 class="mb-3"><i class="bi bi-calendar-check"></i> My Leave Balance</h5>
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <div class="glass-card text-center" style="background:rgba(34,197,94,0.1)">
-                            <i class="bi bi-heart-pulse fs-3 text-success"></i>
-                            <div class="mt-2" style="font-size:13px;">SICK LEAVE</div>
-                            <div class="stat-number text-success" id="sickBalance">–</div>
-                            <div style="font-size:11px;color:#9ca3af;">days remaining</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="glass-card text-center" style="background:rgba(59,130,246,0.1)">
-                            <i class="bi bi-umbrella fs-3 text-primary"></i>
-                            <div class="mt-2" style="font-size:13px;">VACATION LEAVE</div>
-                            <div class="stat-number text-primary" id="vacationBalance">–</div>
-                            <div style="font-size:11px;color:#9ca3af;">days remaining</div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 d-flex align-items-center">
-                        <a href="leave_request.html" class="btn btn-primary w-100" style="border-radius:12px;padding:15px;font-weight:600;letter-spacing:1px;">
-                            <i class="bi bi-plus-circle me-2"></i>FILE A LEAVE REQUEST
-                        </a>
-                    </div>
+    <!-- Reporting & Evaluations -->
+    <div class="row g-4 mb-5" id="reportingSection" style="display:none;">
+        <div class="col-md-6">
+            <div class="glass-card h-100">
+                <h5 class="mb-3"><i class="bi bi-pie-chart-fill me-2"></i>Headcount by Department</h5>
+                <div class="d-flex flex-wrap gap-2" id="deptBadges">
+                    <span class="text-dim">Loading...</span>
                 </div>
             </div>
         </div>
-    </div>    <!-- Recent Activities -->
-    <div class="glass-card">
+        <div class="col-md-6">
+            <div class="glass-card h-100 table-responsive" style="max-height:300px;">
+                <h5 class="mb-3"><i class="bi bi-star-fill me-2"></i>Recent Evaluations</h5>
+                <table class="table table-dark table-hover mb-0">
+                    <tbody id="evalTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const usr = getCurrentUser();
+        if (usr && (usr.role === 'admin' || usr.role === 'hr')) {
+            document.getElementById('reportingSection').style.display = 'flex';
+            try {
+                const data = await API.get('/api/dashboard/summary');
+                const depts = data.department_distribution;
+                const deptHtml = depts.map(d => `<span class="badge bg-primary fs-6">${d.department || 'Unassigned'}: ${d.count}</span>`).join('');
+                document.getElementById('deptBadges').innerHTML = deptHtml || '<span class="text-dim">No data</span>';
+
+                const evals = data.recent_evaluations;
+                const evalHtml = evals.length === 0 ? `<tr><td class="text-center py-4 text-dim">No recent evaluations</td></tr>` 
+                    : evals.map(e => `
+                        <tr>
+                            <td class="fw-semibold">${e.first_name} ${e.last_name}</td>
+                            <td><span class="text-warning"><i class="bi bi-star-fill me-1"></i>${e.rating}</span></td>
+                            <td class="text-dim small">${e.evaluation_date}</td>
+                        </tr>
+                    `).join('');
+                document.getElementById('evalTableBody').innerHTML = evalHtml;
+            } catch (e) { console.error(e); }
+        }
+    });
+    </script>
+
+    <!-- Recent Activities -->
+    <div class="glass-card" id="recentActivitiesSection">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Activities</h5>
             <button class="btn btn-outline-danger btn-sm border-0" onclick="clearActivities()">

@@ -250,7 +250,7 @@ def generate_payroll():
     emp_id = data.get('employee_id')
     if not emp_id: return jsonify({'error': 'Employee ID required'}), 400
     
-<<<<<<< HEAD
+
     conn = get_db()
     if not conn: return jsonify({'error': 'Database connection failed'}), 500
     cursor = conn.cursor(dictionary=True)
@@ -310,17 +310,95 @@ def generate_payroll():
     finally:
         cursor.close()
         conn.close()
-=======
-    # Dummy calculation
-    # In a real system, you'd fetch position/salary and attendance days
-    net_salary = 25000.00 # Placeholder
+
+
+# ─── Leave Requests ──────────────────────────────────────────
+@records_bp.route('/api/leave', methods=['GET'])
+@require_auth
+def get_leaves():
+    role = session['user']['role']
+    emp_id = session['user'].get('employee_id')
+    
+    conn = get_db()
+    if not conn: return jsonify({'error': 'DB error'}), 500
+    cursor = conn.cursor(dictionary=True)
+    
+    if role in ('admin', 'hr'):
+        cursor.execute('SELECT * FROM leave_requests ORDER BY created_at DESC')
+    else:
+        cursor.execute('SELECT * FROM leave_requests WHERE employee_id = %s ORDER BY created_at DESC', (emp_id,))
+        
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(rows)
+
+@records_bp.route('/api/leave', methods=['POST'])
+@require_auth
+def file_leave():
+    data = request.get_json()
+    emp_id = session['user'].get('employee_id')
+    if not emp_id: return jsonify({'error': 'Account not linked to an employee'}), 400
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            INSERT INTO leave_requests (employee_id, leave_type, date_from, date_to, reason, status)
+            VALUES (%s, %s, %s, %s, %s, 'Pending')
+        ''', (emp_id, data.get('leave_type'), data.get('date_from'), data.get('date_to'), data.get('reason')))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'error': 'Failed to process request (are details valid?)'}), 400
+    finally:
+        cursor.close()
+        conn.close()
+    return jsonify({'message': 'Leave request submitted'}), 201
+
+@records_bp.route('/api/leave/<int:leave_id>', methods=['PUT'])
+@require_role('admin', 'hr')
+def update_leave(leave_id):
+    data = request.get_json()
+    status = data.get('status')
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE leave_requests SET status = %s WHERE id = %s', (status, leave_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': f'Leave {status}'})
+
+@records_bp.route('/api/leave/balance', methods=['GET'])
+@require_auth
+def leave_balance():
+    emp_id = session['user'].get('employee_id')
+    if not emp_id: return jsonify({'sick_leave': 0, 'vacation_leave': 0})
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    
+    cursor.execute('''
+        SELECT SUM(DATEDIFF(date_to, date_from) + 1) as used 
+        FROM leave_requests 
+        WHERE employee_id = %s AND leave_type = 'Sick' AND status = 'Approved'
+    ''', (emp_id,))
+    row1 = cursor.fetchone()
+    sick_used = int(row1['used'] or 0)
+    
+    cursor.execute('''
+        SELECT SUM(DATEDIFF(date_to, date_from) + 1) as used 
+        FROM leave_requests 
+        WHERE employee_id = %s AND leave_type = 'Vacation' AND status = 'Approved'
+    ''', (emp_id,))
+    row2 = cursor.fetchone()
+    vacation_used = int(row2['used'] or 0)
+    
+    cursor.close()
+    conn.close()
     
     return jsonify({
-        'employee_id': emp_id,
-        'net_salary': f"{net_salary:,.2f}",
-        'currency': 'PHP'
+        'sick_leave': max(0, 15 - sick_used),
+        'vacation_leave': max(0, 15 - vacation_used)
     })
->>>>>>> d8128f0af5fa78bec8723d24d92619e2af6760f4
 
 # ─── Activities ──────────────────────────────────────────────
 @records_bp.route('/api/activities', methods=['GET'])
@@ -356,3 +434,17 @@ def add_activity():
     cursor.close()
     conn.close()
     return jsonify({'message': 'Activity logged'}), 201
+
+@records_bp.route('/api/activities', methods=['DELETE'])
+@require_role('admin')
+def clear_activities():
+    conn = get_db()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+        
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM activities')
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'All activity logs successfully purged'})

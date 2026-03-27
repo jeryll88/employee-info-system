@@ -3,66 +3,157 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payroll | Employee Information System</title>
-
-<!-- Bootstrap 5 -->
+<title>Payroll & Payslips | Employee Portal</title>
 <link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="./css/global.css">
-<link rel="stylesheet" href="./css/payroll.css">
 <script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="./js/api.js"></script>
 <script src="./js/auth.js"></script>
-<script src="./js/payroll.js"></script>
 </head>
+<body class="fade-in">
+<script>
+    if (!requireAuth()) {}
+</script>
 
-<body>
-<div class="container d-flex justify-content-center mt-5">
-    <div class="premium-card w-50 text-center">
-
+<div class="content container-fluid" style="max-width:1000px;">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <h2 class="system-title">
-            <i class="bi bi-wallet2"></i> PAYROLL
+            <i class="bi bi-wallet2 me-2"></i> Payroll Generation
         </h2>
+        <button class="btn-secondary-custom btn-sm" onclick="window.location.href='dashboard.html'">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </button>
+    </div>
 
-        <div class="mb-4 mt-4 text-start">
-            <label class="form-label text-dim small text-uppercase fw-bold">Employee ID</label>
-            <input type="text" id="empId" class="form-control text-center" placeholder="e.g. EMP1001" style="font-size: 1.2rem; letter-spacing: 2px;">
-        </div>
+    <!-- Generator Control-->
+    <div class="clean-card mb-4 border border-secondary" id="generatorCard" style="background: rgba(0,0,0,0.2);">
+        <h5 class="text-white mb-3" id="generatorTitle">Generate Payslip</h5>
+        <form id="payrollForm" onsubmit="generatePayroll(event)">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6" id="empIdContainer">
+                    <label class="form-label-custom">Employee ID</label>
+                    <input type="text" id="empIdInput" class="form-control-custom" placeholder="e.g. EMP001" required>
+                </div>
+                <div class="col-md-6">
+                    <button type="submit" class="btn-primary-custom w-100" id="btnGenerate">
+                        <i class="bi bi-receipt me-2"></i> Calculate
+                    </button>
+                </div>
+            </div>
+            <div id="genMsg" class="mt-2 small fw-medium text-danger"></div>
+        </form>
+    </div>
 
-        <div class="d-grid mb-4">
-            <button class="btn btn-premium btn-lg" id="generatePayrollBtn">
-                <i class="bi bi-cpu me-2"></i> Calculate Net Salary
-            </button>
-        </div>
+    <!-- Payslip Result -->
+    <div id="payslipResult" style="display:none;" class="fade-in">
+        <div class="clean-card border border-success" style="background: rgba(34, 197, 94, 0.05);">
+            <div class="text-center mb-4">
+                <h4 class="text-white mb-1"><i class="bi bi-building me-2"></i>Official Payslip</h4>
+                <div class="text-dim small" id="payslipDate"></div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-6">
+                    <div class="text-dim small">Employee ID</div>
+                    <div class="fs-5 fw-bold text-white" id="psEmpId"></div>
+                </div>
+                <div class="col-6 text-end">
+                    <div class="text-dim small">Currency</div>
+                    <div class="fs-5 fw-bold text-white" id="psCurrency">PHP</div>
+                </div>
+            </div>
 
-        <div id="result" class="mt-4"></div>
+            <hr class="border-secondary mb-4">
 
-        <div class="mt-4 pt-3 border-top border-secondary border-opacity-25">
-            <a href="dashboard.html" class="btn btn-link text-dim text-decoration-none small">
-                <i class="bi bi-arrow-left"></i> Back to Dashboard
-            </a>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h6 class="text-primary mb-3">Earnings</h6>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-dim">Base Salary</span>
+                        <span class="text-white fw-medium" id="psBase">0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-dim">Attendance Allowance (<span id="psDays">0</span> days)</span>
+                        <span class="text-success fw-medium" id="psAllow">+ 0.00</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-danger mb-3">Deductions</h6>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-dim">Standard Deductions</span>
+                        <span class="text-danger fw-medium" id="psDeduct">- 0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-dim">Tax (10%)</span>
+                        <span class="text-danger fw-medium" id="psTax">- 0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-secondary mt-4 mb-4">
+
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-dim">Net Salary</div>
+                <div class="display-6 fw-bold text-success" id="psNet">0.00</div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const user = getCurrentUser();
-        const empIdInput = document.getElementById('empId');
+const user = getCurrentUser();
+
+document.addEventListener('DOMContentLoaded', () => {
+    // If user is employee, pre-fill and lock their ID so they only generate their own payslip
+    if (user.role === 'employee') {
+        const empInput = document.getElementById('empIdInput');
+        empInput.value = user.employee_id;
+        empInput.setAttribute('readonly', 'true');
+        empInput.style.background = 'rgba(255,255,255,0.05)';
+        document.getElementById('generatorTitle').innerText = "View My Payslip";
+    }
+});
+
+async function generatePayroll(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnGenerate');
+    const msg = document.getElementById('genMsg');
+    const resultBox = document.getElementById('payslipResult');
+    
+    const empId = document.getElementById('empIdInput').value.trim();
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Calculating...';
+    msg.innerText = '';
+    resultBox.style.display = 'none';
+    
+    try {
+        const res = await API.post('/api/payroll/generate', { employee_id: empId });
         
-        // If employee, they can only see their own payroll
-        if (user && user.role === 'employee') {
-            empIdInput.value = user.employee_id || '';
-            empIdInput.disabled = true;
-        } else {
-            // If admin/HR, they can optionally use the query param ID
-            const urlParams = new URLSearchParams(window.location.search);
-            const id = urlParams.get('id');
-            if (id) empIdInput.value = id;
-        }
-    });
+        // Populate payslip
+        document.getElementById('psEmpId').innerText = res.employee_id;
+        document.getElementById('psBase').innerText = res.base_salary;
+        document.getElementById('psDays').innerText = res.work_days;
+        document.getElementById('psAllow').innerText = "+ " + res.allowance;
+        document.getElementById('psDeduct').innerText = "- " + res.deductions;
+        document.getElementById('psTax').innerText = "- " + res.tax;
+        document.getElementById('psNet').innerText = res.currency + " " + res.net_salary;
+        
+        const today = new Date();
+        document.getElementById('payslipDate').innerText = `Generated on ${today.toLocaleDateString()} for Current Month`;
+        
+        resultBox.style.display = 'block';
+        API.showToast("Payslip Generated Successfully!", "success");
+    } catch (err) {
+        msg.innerText = err.message || "Failed to generate payroll. Check if Service Records exist.";
+        API.showToast("Payroll Generation Failed", "danger");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-receipt me-2"></i> Calculate';
+    }
+}
 </script>
-
-
 </body>
 </html>

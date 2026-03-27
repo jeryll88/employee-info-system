@@ -3,63 +3,94 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Employee Information System – Login</title>
+<title>Login | Employee Information System</title>
 <link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="./css/global.css">
-<link rel="stylesheet" href="./css/login.css">
 <script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="./js/api.js"></script>
 <script src="./js/auth.js"></script>
+<style>
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background-color: var(--bg-main);
+    }
+    .login-container {
+        width: 100%;
+        max-width: 400px;
+    }
+    .brand-logo {
+        font-size: 3rem;
+        color: var(--primary);
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    .role-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        background: #f1f5f9;
+        padding: 0.25rem;
+        border-radius: 8px;
+    }
+    .role-tab {
+        flex: 1;
+        text-align: center;
+        padding: 0.5rem;
+        border: none;
+        background: transparent;
+        color: var(--text-dim);
+        font-weight: 600;
+        font-size: 0.875rem;
+        border-radius: 6px;
+        transition: var(--transition);
+        cursor: pointer;
+    }
+    .role-tab.active {
+        background: white;
+        color: var(--primary);
+        box-shadow: var(--shadow-sm);
+    }
+</style>
 </head>
-<body>
+<body class="fade-in">
 
-<div class="login-box premium-card">
-
-    <!-- Logo / Title -->
-    <div class="login-logo">
-        <i class="bi bi-building-check"></i>
+<div class="login-container">
+    <div class="brand-logo">
+        <i class="bi bi-hexagon-fill"></i>
     </div>
-    <h2>Employee Information System</h2>
-    <p class="login-subtitle">Secure access portal</p>
+    <div class="clean-card text-center mb-3">
+        <h2 class="mb-1" style="font-weight:700; color:var(--text-main);">Welcome Back</h2>
+        <p class="text-dim mb-4" style="font-size:0.875rem;">Sign in to your account</p>
 
-    <form onsubmit="event.preventDefault(); handleLogin();">
-
-        <!-- Role Badge Selector -->
-        <div class="role-selector">
-            <label class="role-label"><i class="bi bi-shield-lock me-1"></i> Sign in as</label>
+        <form onsubmit="event.preventDefault(); handleLogin();" class="text-start">
+            
             <div class="role-tabs" id="roleTabs">
-                <button type="button" class="role-tab active" data-role="admin"    onclick="selectRole('admin')">ADMIN</button>
-                <button type="button" class="role-tab"        data-role="hr"       onclick="selectRole('hr')">HR</button>
-                <button type="button" class="role-tab"        data-role="employee" onclick="selectRole('employee')">STAFF</button>
+                <button type="button" class="role-tab active" data-role="admin" onclick="selectRole('admin')">Admin</button>
+                <button type="button" class="role-tab" data-role="hr" onclick="selectRole('hr')">HR</button>
+                <button type="button" class="role-tab" data-role="employee" onclick="selectRole('employee')">Staff</button>
             </div>
-        </div>
 
-        <div class="form-floating mb-3">
-            <input type="text" id="username" class="form-control" placeholder=" " required autocomplete="username">
-            <label for="username"><i class="bi bi-person me-2"></i>Username</label>
-        </div>
+            <div class="mb-3">
+                <label class="form-label-custom">Username</label>
+                <input type="text" id="username" class="form-control-custom" required>
+            </div>
 
-        <div class="form-floating mb-4">
-            <input type="password" id="password" class="form-control" placeholder=" " required autocomplete="current-password">
-            <label for="password"><i class="bi bi-key me-2"></i>Password</label>
-        </div>
+            <div class="mb-4">
+                <label class="form-label-custom">Password</label>
+                <input type="password" id="password" class="form-control-custom" required>
+            </div>
 
-        <div class="d-grid mt-4">
-            <button type="submit" class="btn btn-enterprise" id="loginBtn">
-                <i class="bi bi-box-arrow-in-right me-2"></i>LOGIN
+            <button type="submit" class="btn-primary-custom w-100 justify-content-center" id="loginBtn" style="padding: 0.75rem;">
+                Sign In
             </button>
-        </div>
-
-    </form>
-
-    <p class="error" id="errorMsg"></p>
-
-    <div class="secure-text">
-        <i class="bi bi-shield-lock-fill me-1"></i>
-        Secure access &bull; Encrypted session &bull; Monitored system
+        </form>
     </div>
-
+    
+    <div id="errorMsg" class="text-danger text-center mt-3" style="font-size:0.875rem; font-weight:500;"></div>
 </div>
 
 <script>
@@ -70,32 +101,28 @@ function selectRole(role) {
     document.querySelectorAll('.role-tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.role === role);
     });
-    // Clear fields on role change
     document.getElementById('username').value = '';
     document.getElementById('password').value = '';
 }
 
-// Pre-fill on load
-selectRole('admin');
-
 async function handleLogin() {
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
     const errorMsg = document.getElementById('errorMsg');
     const btn      = document.getElementById('loginBtn');
-
+    
     errorMsg.textContent = '';
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Logging in...';
+    btn.innerHTML = 'Signing in...';
 
     try {
-        const user = await authLogin(username, password);
-        // Redirect based on role
+        await authLogin(
+            document.getElementById('username').value.trim(), 
+            document.getElementById('password').value.trim()
+        );
         window.location.href = 'dashboard.html';
     } catch (err) {
         errorMsg.textContent = err.message;
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>LOGIN';
+        btn.innerHTML = 'Sign In';
     }
 }
 </script>

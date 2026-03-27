@@ -99,3 +99,60 @@ def logout():
 @require_auth
 def me():
     return jsonify(session['user'])
+
+# ─── User Management (Admin Only) ──────────────────────────────
+@auth_bp.route('/api/users', methods=['GET'])
+@require_role('admin')
+def get_users():
+    conn = get_db()
+    if not conn: return jsonify({'error': 'DB error'}), 500
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT id, username, role, employee_id, created_at FROM users ORDER BY username')
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(rows)
+
+@auth_bp.route('/api/users', methods=['POST'])
+@require_role('admin')
+def create_user():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    role = data.get('role', 'employee')
+    emp_id = data.get('employee_id') or None
+    
+    if not username or not password:
+        return jsonify({'error': 'Username and password required'}), 400
+        
+    hashed_pw = generate_password_hash(password)
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            'INSERT INTO users (username, password, role, employee_id) VALUES (%s, %s, %s, %s)',
+            (username, hashed_pw, role, emp_id)
+        )
+        conn.commit()
+    except Exception as e:
+        return jsonify({'error': 'Username already exists or invalid employee ID'}), 400
+    finally:
+        cursor.close()
+        conn.close()
+        
+    return jsonify({'message': 'User created'})
+
+@auth_bp.route('/api/users/<int:user_id>', methods=['DELETE'])
+@require_role('admin')
+def delete_user(user_id):
+    if session['user']['id'] == user_id:
+        return jsonify({'error': 'Cannot delete yourself'}), 403
+        
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM users WHERE id = %s', (user_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'User deleted'})

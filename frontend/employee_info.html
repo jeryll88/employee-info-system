@@ -28,10 +28,13 @@ if (!requireAuth()) {}
         <div class="row justify-content-center">
             <div class="col-md-9 col-lg-10 content-area">
                 <div class="premium-card text-center">
-                    <!-- Back Button -->
-                    <div class="text-start mb-3">
+                    <!-- Back Button and Edit -->
+                    <div class="text-start mb-3 d-flex justify-content-between">
                         <button class="btn btn-premium btn-sm" onclick="goBack()">
                             <i class="bi bi-arrow-left"></i> Back
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" id="editProfileBtn" onclick="editProfile()" style="display:none; border-radius:8px;">
+                            <i class="bi bi-pencil-fill me-1"></i> Edit Details
                         </button>
                     </div>
 
@@ -78,23 +81,13 @@ if (!requireAuth()) {}
                 <!-- Sidebar Buttons -->
                 <div class="sidebar mt-4">
                     <button class="btn" onclick="goToTrainings()">
-<<<<<<< HEAD
                         <i class="bi bi-mortarboard-fill"></i> Trainings
                     </button>
                     <button class="btn" onclick="goToServiceRecords()">
                         <i class="bi bi-briefcase-fill"></i> Service Records
                     </button>
-                    <button class="btn" onclick="goToPayroll()">
-                        <i class="bi bi-wallet2"></i> Payroll
-=======
-                        <i class="fa-solid fa-camera"></i> Trainings
-                    </button>
-                    <button class="btn" onclick="goToServiceRecords()">
-                        <i class="fa-solid fa-clock-rotate-left"></i> Service Records
-                    </button>
-                    <button class="btn" onclick="goToPayroll()">
-                        <i class="fa-solid fa-money-bill-wave"></i> Payroll
->>>>>>> d8128f0af5fa78bec8723d24d92619e2af6760f4
+                    <button class="btn" onclick="goToPerformance()">
+                        <i class="bi bi-star-fill"></i> Performance
                     </button>
                 </div>
             </div>
@@ -102,19 +95,28 @@ if (!requireAuth()) {}
     </div>
 
 <script>
-// Own-profile guard for employee role
+// Own-profile guard and Edit button logic
 (function() {
     const user = getCurrentUser();
     if (!user) return;
+    const params   = new URLSearchParams(window.location.search);
+    const viewedId = params.get('id');
+    
     if (user.role === 'employee') {
-        const params   = new URLSearchParams(window.location.search);
-        const viewedId = params.get('id');
         if (viewedId && viewedId !== user.employee_id) {
-            // Redirect employee to their own profile
             window.location.replace(`employee_info.html?id=${user.employee_id}`);
         }
     }
+    
+    if (user.role === 'admin' || user.role === 'hr' || (user.role === 'employee' && user.employee_id === viewedId)) {
+        document.getElementById('editProfileBtn').style.display = 'inline-block';
+    }
 })();
+
+function editProfile() {
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = `employee_edit.html?id=${params.get('id')}`;
+}
 </script>
 
 </body>
