@@ -1,3 +1,4 @@
+if (!requireAuth()) { /* redirects handled inside */ }
 const user = getCurrentUser();
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -7,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('searchFilters').style.display = 'block';
     }
 
-    if (user.role === 'admin') {
+    if (user.role === 'admin' || user.role === 'hr') {
         document.getElementById('adminActions').innerHTML = `
             <a href="employee_add.html" class="btn-primary-custom">
                 <i class="bi bi-person-plus-fill"></i> Add Employee

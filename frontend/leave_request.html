@@ -12,9 +12,6 @@
 <script src="./js/auth.js"></script>
 </head>
 <body class="fade-in">
-<script>
-    if (!requireRole('employee')) {}
-</script>
 
 <div class="content container-fluid" style="max-width:900px;">
     <!-- Header -->
@@ -27,6 +24,9 @@
         </button>
     </div>
 
+    <!-- Notification Alerts -->
+    <div id="notifAlerts" class="mb-3"></div>
+
     <!-- Application Form -->
     <div class="clean-card mb-5 border border-secondary" style="background: rgba(0,0,0,0.2);">
         <h6 class="text-white mb-4">Request Time Off</h6>
@@ -37,6 +37,11 @@
                     <select id="leaveType" class="form-control-custom" required>
                         <option value="Sick">Sick Leave</option>
                         <option value="Vacation">Vacation Leave</option>
+                        <option value="Emergency">Emergency Leave</option>
+                        <option value="Maternity/Paternity">Maternity / Paternity Leave</option>
+                        <option value="Bereavement">Bereavement Leave</option>
+                        <option value="Study">Study / Training Leave</option>
+                        <option value="Special Privilege">Special Privilege Leave</option>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -78,62 +83,6 @@
         </table>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', loadHistory);
-
-async function loadHistory() {
-    const tbody = document.getElementById('historyTableBody');
-    try {
-        const leaves = await API.get('/api/leave');
-        if (leaves.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-dim py-4">No active or historic requests.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = leaves.map(l => {
-            const badgeClass = l.status === 'Approved' ? 'success' : l.status === 'Rejected' ? 'danger' : 'warning text-dark';
-            return `
-            <tr>
-                <td class="fw-bold text-white">${l.leave_type}</td>
-                <td class="small">${l.date_from} — ${l.date_to}</td>
-                <td class="text-dim text-truncate" style="max-width:200px;" title="${l.reason}">${l.reason}</td>
-                <td><span class="badge bg-${badgeClass} p-2">${l.status}</span></td>
-            </tr>
-            `;
-        }).join('');
-
-    } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-danger py-4">Failed to load history.</td></tr>';
-    }
-}
-
-async function submitLeave(e) {
-    e.preventDefault();
-    const btn = document.getElementById('btnSubmit');
-    const msg = document.getElementById('subMsg');
-    
-    btn.disabled = true;
-    msg.innerText = '';
-    
-    const payload = {
-        leave_type: document.getElementById('leaveType').value,
-        date_from: document.getElementById('dateFrom').value,
-        date_to: document.getElementById('dateTo').value,
-        reason: document.getElementById('leaveReason').value.trim()
-    };
-
-    try {
-        await API.post('/api/leave', payload);
-        API.showToast("Your leave request has been submitted to HR.", "success");
-        document.getElementById('leaveForm').reset();
-        loadHistory();
-    } catch (err) {
-        msg.innerText = err.message || "Failed to submit request.";
-    } finally {
-        btn.disabled = false;
-    }
-}
-</script>
+<script src="./js/leave_request.js"></script>
 </body>
 </html>

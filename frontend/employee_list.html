@@ -12,11 +12,12 @@
     <script src="./js/auth.js"></script>
 </head>
 <body class="fade-in">
-<script>if (!requireAuth()) {}</script>
-
 <div class="top-header">
     <a href="dashboard.html" class="brand-title"><i class="bi bi-hexagon-fill me-2"></i>EIS</a>
     <div class="d-flex align-items-center gap-3">
+        <a href="dashboard.html" class="btn-secondary-custom" style="padding: 0.35rem 0.75rem;">
+            <i class="bi bi-arrow-left me-1"></i> Dashboard
+        </a>
         <span class="fw-medium text-dim" id="userNameDisplay"></span>
         <button class="btn-secondary-custom" style="padding: 0.35rem 0.75rem;" onclick="authLogout()">Logout</button>
     </div>

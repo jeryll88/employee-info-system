@@ -16,7 +16,9 @@
 <div class="top-header">
     <a href="dashboard.html" class="brand-title"><i class="bi bi-hexagon-fill me-2"></i>EIS</a>
     <div class="d-flex align-items-center gap-3">
-        <button class="btn-secondary-custom" style="padding: 0.35rem 0.75rem;" onclick="window.history.back()">Go Back</button>
+        <button class="btn-secondary-custom" style="padding: 0.35rem 0.75rem;" onclick="window.history.back()">
+            <i class="bi bi-arrow-left me-1"></i> Go Back
+        </button>
     </div>
 </div>
 
@@ -32,7 +34,7 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label-custom">Date of Birth</label>
-                    <input type="date" class="form-control-custom" id="birthday" required>
+                    <input type="date" class="form-control-custom" id="birthday">
                 </div>
             </div>
 
@@ -80,7 +82,7 @@
 
             <div class="d-flex gap-3 pt-2">
                 <button type="submit" class="btn-primary-custom w-100 justify-content-center py-2" id="submitBtn">
-                    Update Record
+                    <i class="bi bi-save me-2"></i> Update Record
                 </button>
             </div>
             <div id="formMsg" class="mt-3 text-center fw-medium pb-2 text-danger"></div>
@@ -100,22 +102,35 @@ else if (active_user.role !== 'admin' && active_user.role !== 'hr') {
     }
 }
 
-
 document.addEventListener('DOMContentLoaded', async () => {
-    if(!targetId) return window.history.back();
+    if (!targetId) return window.history.back();
     try {
         const emp = await API.get(`/api/employees/${targetId}`);
-        document.getElementById('empId').value = emp.id;
-        document.getElementById('firstName').value = emp.first_name;
+        document.getElementById('empId').value = emp.id || emp.employee_id || '';
+        document.getElementById('firstName').value = emp.first_name || '';
         document.getElementById('middleName').value = emp.middle_name || '';
-        document.getElementById('lastName').value = emp.last_name;
-        document.getElementById('birthday').value = emp.birthday || '';
+        document.getElementById('lastName').value = emp.last_name || '';
+
+        // Dates are now returned as YYYY-MM-DD strings — set directly
+        document.getElementById('birthday').value = (emp.birthday || '').substring(0, 10);
         document.getElementById('position').value = emp.position || '';
         document.getElementById('department').value = emp.department || '';
-        document.getElementById('dateHired').value = emp.date_hired || '';
-        document.getElementById('status').value = emp.status || 'Active';
+        document.getElementById('dateHired').value = (emp.date_hired || '').substring(0, 10);
+
+        const statusSel = document.getElementById('status');
+        if (emp.status) {
+            statusSel.value = emp.status;
+            // If value not in options, add it dynamically
+            if (statusSel.value !== emp.status) {
+                const opt = document.createElement('option');
+                opt.value = emp.status;
+                opt.textContent = emp.status;
+                statusSel.appendChild(opt);
+                statusSel.value = emp.status;
+            }
+        }
     } catch (e) {
-        document.getElementById('formMsg').innerText = "Failed to load employee data.";
+        document.getElementById('formMsg').innerText = 'Failed to load employee data.';
     }
 });
 
@@ -123,19 +138,19 @@ document.getElementById('editEmployeeForm').addEventListener('submit', async (e)
     e.preventDefault();
     const btn = document.getElementById('submitBtn');
     const msg = document.getElementById('formMsg');
-    
+
     btn.disabled = true;
-    btn.innerText = 'Updating...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
     msg.innerText = '';
-    
+
     const payload = {
         first_name: document.getElementById('firstName').value.trim(),
         middle_name: document.getElementById('middleName').value.trim(),
         last_name: document.getElementById('lastName').value.trim(),
-        birthday: document.getElementById('birthday').value,
+        birthday: document.getElementById('birthday').value || null,
         position: document.getElementById('position').value.trim(),
         department: document.getElementById('department').value.trim(),
-        date_hired: document.getElementById('dateHired').value,
+        date_hired: document.getElementById('dateHired').value || null,
         status: document.getElementById('status').value
     };
 
@@ -144,11 +159,13 @@ document.getElementById('editEmployeeForm').addEventListener('submit', async (e)
         msg.classList.remove('text-danger');
         msg.classList.add('text-success');
         msg.innerText = 'Record Updated Successfully!';
-        setTimeout(() => window.history.back(), 1000);
+        API.logActivity(`Updated employee: ${payload.first_name} ${payload.last_name}`);
+        setTimeout(() => window.location.href = 'employee_list.html', 1000);
     } catch (err) {
+        msg.classList.add('text-danger');
         msg.innerText = err.message || 'Failed to update employee.';
         btn.disabled = false;
-        btn.innerText = 'Update Record';
+        btn.innerHTML = '<i class="bi bi-save me-2"></i> Update Record';
     }
 });
 </script>

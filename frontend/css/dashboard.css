@@ -143,3 +143,88 @@
         border: none;
     }
 
+/* ── Notification Bell ─────────────── */
+.notif-bell-wrap {
+    position: relative;
+    cursor: pointer;
+}
+.notif-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50%      { transform: scale(1.2); }
+}
+.notif-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: 340px;
+    background: #1a2332;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    z-index: 1000;
+    overflow: hidden;
+    display: none;
+}
+.notif-dropdown.open { display: block; animation: fadeDown 0.2s ease; }
+@keyframes fadeDown { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform: translateY(0); } }
+.notif-header { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
+.notif-item {
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.15s;
+    cursor: default;
+}
+.notif-item:hover { background: rgba(255,255,255,0.04); }
+.notif-item.unread { background: rgba(99,102,241,0.08); border-left: 3px solid #6366f1; }
+.notif-item .notif-msg { font-size: 13px; color: #e5e7eb; }
+.notif-item .notif-time { font-size: 11px; color: #6b7280; margin-top: 3px; }
+.notif-empty { text-align: center; padding: 30px; color: #6b7280; font-size: 13px; }
+
+/* ── Dept Headcount Cards ──────────── */
+.dept-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+.dept-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+.dept-card:hover {
+    background: rgba(99,102,241,0.12);
+    border-color: rgba(99,102,241,0.3);
+    transform: translateY(-2px);
+}
+.dept-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #6366f1, #8b5cf6);
+}
+.dept-name { font-size: 12px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.dept-count { font-size: 28px; font-weight: 800; color: #fff; line-height: 1; }
+.dept-bar-wrap { margin-top: 10px; height: 4px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
+.dept-bar { height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 4px; transition: width 0.8s ease; }
+.dept-pct { font-size: 11px; color: #6b7280; margin-top: 4px; }

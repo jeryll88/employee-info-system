@@ -16,9 +16,6 @@
 <body>
 
 <!-- AUTH GUARD -->
-<script>
-    if (!requireAuth()) { /* redirects */ }
-</script>
 
 <div class="content container-fluid">
 
@@ -29,6 +26,20 @@
         </h2>
         <div class="d-flex align-items-center gap-3">
             <div id="userInfo" class="text-white" style="font-size:14px;"></div>
+
+            <!-- Notification Bell (employee only) -->
+            <div class="notif-bell-wrap" id="notifBellWrap" style="display:none;" onclick="toggleNotifDropdown()">
+                <i class="bi bi-bell-fill text-white" style="font-size:20px;"></i>
+                <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+                <div class="notif-dropdown" id="notifDropdown">
+                    <div class="notif-header">
+                        <span class="text-white fw-bold" style="font-size:14px;"><i class="bi bi-bell me-2"></i>Notifications</span>
+                        <button class="btn btn-sm btn-outline-secondary border-0 text-dim" style="font-size:11px;" onclick="markAllRead(event)">Mark All Read</button>
+                    </div>
+                    <div id="notifList"><div class="notif-empty">Loading...</div></div>
+                </div>
+            </div>
+
             <button class="btn-logout" onclick="authLogout()">
                 <i class="bi bi-box-arrow-right me-1"></i>Logout
             </button>
@@ -113,55 +124,32 @@
         </div>
     </div>
 
-    <!-- Reporting & Evaluations -->
+    <!-- Reporting & Evaluations (Admin / HR) -->
     <div class="row g-4 mb-5" id="reportingSection" style="display:none;">
         <div class="col-md-6">
             <div class="glass-card h-100">
-                <h5 class="mb-3"><i class="bi bi-pie-chart-fill me-2"></i>Headcount by Department</h5>
-                <div class="d-flex flex-wrap gap-2" id="deptBadges">
-                    <span class="text-dim">Loading...</span>
+                <div class="d-flex align-items-center mb-4">
+                    <i class="bi bi-diagram-3-fill me-2 text-primary fs-5"></i>
+                    <h5 class="mb-0 text-white">Headcount by Department</h5>
                 </div>
+                <div id="deptGrid" class="dept-grid">
+                    <div class="text-dim">Loading...</div>
+                </div>
+                <div class="text-dim small mt-3" id="deptTotalNote"></div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="glass-card h-100 table-responsive" style="max-height:300px;">
+            <div class="glass-card h-100 table-responsive" style="max-height:320px;">
                 <h5 class="mb-3"><i class="bi bi-star-fill me-2"></i>Recent Evaluations</h5>
                 <table class="table table-dark table-hover mb-0">
-                    <tbody id="evalTableBody">
-                    </tbody>
+                    <tbody id="evalTableBody"></tbody>
                 </table>
             </div>
         </div>
     </div>
-    
-    <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        const usr = getCurrentUser();
-        if (usr && (usr.role === 'admin' || usr.role === 'hr')) {
-            document.getElementById('reportingSection').style.display = 'flex';
-            try {
-                const data = await API.get('/api/dashboard/summary');
-                const depts = data.department_distribution;
-                const deptHtml = depts.map(d => `<span class="badge bg-primary fs-6">${d.department || 'Unassigned'}: ${d.count}</span>`).join('');
-                document.getElementById('deptBadges').innerHTML = deptHtml || '<span class="text-dim">No data</span>';
 
-                const evals = data.recent_evaluations;
-                const evalHtml = evals.length === 0 ? `<tr><td class="text-center py-4 text-dim">No recent evaluations</td></tr>` 
-                    : evals.map(e => `
-                        <tr>
-                            <td class="fw-semibold">${e.first_name} ${e.last_name}</td>
-                            <td><span class="text-warning"><i class="bi bi-star-fill me-1"></i>${e.rating}</span></td>
-                            <td class="text-dim small">${e.evaluation_date}</td>
-                        </tr>
-                    `).join('');
-                document.getElementById('evalTableBody').innerHTML = evalHtml;
-            } catch (e) { console.error(e); }
-        }
-    });
-    </script>
-
-    <!-- Recent Activities -->
-    <div class="glass-card" id="recentActivitiesSection">
+    <!-- Recent Activities (Admin + HR) -->
+    <div class="glass-card" id="recentActivitiesSection" style="display:none;">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Activities</h5>
             <button class="btn btn-outline-danger btn-sm border-0" onclick="clearActivities()">
@@ -186,7 +174,6 @@
     </div>
 
 </div>
-
 
 <script src="./js/dashboard.js"></script>
 </body>
