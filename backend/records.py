@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 import sys, os
+from datetime import date, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from auth import require_role, require_auth
 
@@ -8,6 +9,15 @@ records_bp = Blueprint('records', __name__)
 def get_db():
     from app import get_db as _get_db
     return _get_db()
+
+def serialize_dates(row):
+    """Convert date/datetime objects to strings for JSON serialization."""
+    if not row:
+        return row
+    for key, val in row.items():
+        if isinstance(val, (date, datetime)):
+            row[key] = val.isoformat()
+    return row
 
 # ─── Trainings ───────────────────────────────────────────────
 @records_bp.route('/api/trainings', methods=['GET'])
@@ -25,7 +35,7 @@ def get_trainings():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify(rows)
+    return jsonify([serialize_dates(r) for r in rows])
 
 @records_bp.route('/api/trainings', methods=['POST'])
 @require_role('admin', 'hr')
@@ -76,7 +86,7 @@ def get_training(id):
     cursor.close()
     conn.close()
     if not row: return jsonify({'error': 'Training not found'}), 404
-    return jsonify(row)
+    return jsonify(serialize_dates(row))
 
 @records_bp.route('/api/trainings/<int:id>', methods=['PUT'])
 @require_role('admin', 'hr')
@@ -112,7 +122,7 @@ def get_service_records():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify(rows)
+    return jsonify([serialize_dates(r) for r in rows])
 
 @records_bp.route('/api/service_records', methods=['POST'])
 @require_role('admin', 'hr')
@@ -154,7 +164,7 @@ def get_service_record(id):
     cursor.close()
     conn.close()
     if not row: return jsonify({'error': 'Record not found'}), 404
-    return jsonify(row)
+    return jsonify(serialize_dates(row))
 
 @records_bp.route('/api/service_records/<int:id>', methods=['PUT'])
 @require_role('admin', 'hr')
@@ -208,14 +218,36 @@ def get_attendance():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify(rows)
+    return jsonify([serialize_dates(r) for r in rows])
+
+@records_bp.route('/api/attendance/today', methods=['GET'])
+@require_auth
+def get_today_attendance():
+    """Returns today's attendance record for the current employee."""
+    emp_id = session['user'].get('employee_id')
+    if not emp_id:
+        return jsonify({'error': 'Not linked to employee'}), 400
+
+    today = datetime.now().date().isoformat()
+    conn = get_db()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        'SELECT * FROM attendance WHERE employee_id = %s AND attendance_date = %s',
+        (emp_id, today)
+    )
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return jsonify(serialize_dates(row) if row else {})
 
 @records_bp.route('/api/attendance', methods=['POST'])
 @require_auth
 def log_attendance():
     data    = request.get_json()
     role    = session['user']['role']
-    # If admin/hr, they can specify emp_id. If employee, it's their own.
     emp_id  = data.get('employee_id') if role in ('admin', 'hr') else session['user'].get('employee_id')
     
     if not emp_id: return jsonify({'error': 'Employee ID required'}), 400
@@ -229,7 +261,6 @@ def log_attendance():
         return jsonify({'error': 'Database connection failed'}), 500
         
     cursor = conn.cursor(dictionary=True)
-    # Check if already logged for today
     cursor.execute('SELECT id FROM attendance WHERE employee_id = %s AND attendance_date = %s', (emp_id, a_date))
     existing = cursor.fetchone()
     if existing:
@@ -242,7 +273,74 @@ def log_attendance():
     conn.close()
     return jsonify({'message': 'Attendance logged'})
 
+@records_bp.route('/api/attendance/checkout', methods=['PUT'])
+@require_auth
+def checkout_attendance():
+    """Checks out the employee for today, recording time_out."""
+    emp_id = session['user'].get('employee_id')
+    if not emp_id:
+        return jsonify({'error': 'Not linked to employee'}), 400
+
+    now = datetime.now()
+    today = now.date().isoformat()
+    time_out = now.strftime('%H:%M:%S')
+
+    conn = get_db()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        'SELECT id FROM attendance WHERE employee_id = %s AND attendance_date = %s',
+        (emp_id, today)
+    )
+    existing = cursor.fetchone()
+    if not existing:
+        cursor.close()
+        conn.close()
+        return jsonify({'error': 'No check-in found for today. Please check in first.'}), 400
+
+    cursor.execute('UPDATE attendance SET time_out = %s WHERE id = %s', (time_out, existing['id']))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'Checked out successfully', 'time_out': time_out})
+
 # ─── Payroll ───────────────────────────────────────────────
+@records_bp.route('/api/payroll', methods=['GET'])
+@require_auth
+def get_payroll_history():
+    """Returns payslip history. Employee sees own; admin/hr can filter by employee_id."""
+    role = session['user']['role']
+    emp_id = request.args.get('employee_id') or session['user'].get('employee_id')
+
+    if role == 'employee':
+        emp_id = session['user'].get('employee_id')
+        if not emp_id:
+            return jsonify({'error': 'Account not linked to employee'}), 400
+
+    conn = get_db()
+    if not conn: return jsonify({'error': 'Database connection failed'}), 500
+    cursor = conn.cursor(dictionary=True)
+
+    if role in ('admin', 'hr') and emp_id:
+        cursor.execute(
+            'SELECT * FROM payroll_records WHERE employee_id = %s ORDER BY created_at DESC',
+            (emp_id,)
+        )
+    elif role in ('admin', 'hr'):
+        cursor.execute('SELECT * FROM payroll_records ORDER BY created_at DESC LIMIT 50')
+    else:
+        cursor.execute(
+            'SELECT * FROM payroll_records WHERE employee_id = %s ORDER BY created_at DESC',
+            (emp_id,)
+        )
+
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify([serialize_dates(r) for r in rows])
+
 @records_bp.route('/api/payroll/generate', methods=['POST'])
 @require_role('admin', 'hr')
 def generate_payroll():
@@ -250,7 +348,6 @@ def generate_payroll():
     emp_id = data.get('employee_id')
     if not emp_id: return jsonify({'error': 'Employee ID required'}), 400
     
-
     conn = get_db()
     if not conn: return jsonify({'error': 'Database connection failed'}), 500
     cursor = conn.cursor(dictionary=True)
@@ -266,17 +363,15 @@ def generate_payroll():
         
         base_salary = 0.0
         if record and record['salary_range']:
-            # Simple parser for "25,000", "25000", or "25000-30000"
             salary_str = record['salary_range'].split('-')[0].replace(',', '').strip()
             try:
                 base_salary = float(salary_str)
             except:
-                base_salary = 20000.0 # Fallback
+                base_salary = 20000.0
         else:
-            base_salary = 20000.0 # Default if no record
+            base_salary = 20000.0
             
         # 2. Get attendance for current month
-        from datetime import datetime
         now = datetime.now()
         cursor.execute('''
             SELECT COUNT(*) as days FROM attendance 
@@ -288,13 +383,31 @@ def generate_payroll():
         work_days = attendance['days'] if attendance else 0
         
         # 3. Calculation
-        # Assuming 22 standard work days. 
-        # Bonus of 100 per day present, flat deduction of 500.
         allowance = work_days * 100.0
         deductions = 500.0
         tax = base_salary * 0.10
         net_salary = base_salary + allowance - deductions - tax
-        
+
+        # 4. Save payslip record to DB
+        generated_by = session['user'].get('username', 'system')
+        cursor2 = conn.cursor()
+        cursor2.execute('''
+            INSERT INTO payroll_records 
+                (employee_id, period_month, period_year, base_salary, allowance, deductions, tax, net_salary, work_days, generated_by)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ''', (
+            emp_id, now.month, now.year,
+            round(base_salary, 2), round(allowance, 2),
+            round(deductions, 2), round(tax, 2), round(net_salary, 2),
+            work_days, generated_by
+        ))
+        conn.commit()
+        cursor2.close()
+
+        # 5. Notify the employee
+        month_name = now.strftime('%B %Y')
+        _notify_employee(conn, emp_id, f"Your payslip for {month_name} has been generated. Net Pay: PHP {net_salary:,.2f}")
+
         return jsonify({
             'employee_id': emp_id,
             'base_salary': f"{base_salary:,.2f}",
@@ -303,14 +416,14 @@ def generate_payroll():
             'deductions': f"{deductions:,.2f}",
             'tax': f"{tax:,.2f}",
             'net_salary': f"{net_salary:,.2f}",
-            'currency': 'PHP'
+            'currency': 'PHP',
+            'period': now.strftime('%B %Y')
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
         conn.close()
-
 
 # ─── Leave Requests ──────────────────────────────────────────
 @records_bp.route('/api/leave', methods=['GET'])
@@ -331,7 +444,7 @@ def get_leaves():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify(rows)
+    return jsonify([serialize_dates(r) for r in rows])
 
 @records_bp.route('/api/leave', methods=['POST'])
 @require_auth
@@ -359,14 +472,28 @@ def file_leave():
 @require_role('admin', 'hr')
 def update_leave(leave_id):
     data = request.get_json()
-    status = data.get('status')
+    new_status = data.get('status')
     conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('UPDATE leave_requests SET status = %s WHERE id = %s', (status, leave_id))
+    cursor = conn.cursor(dictionary=True)
+
+    # Get leave info for notification
+    cursor.execute('SELECT * FROM leave_requests WHERE id = %s', (leave_id,))
+    leave = cursor.fetchone()
+
+    cursor2 = conn.cursor()
+    cursor2.execute('UPDATE leave_requests SET status = %s WHERE id = %s', (new_status, leave_id))
     conn.commit()
+    cursor2.close()
+
+    # Send notification to employee
+    if leave and new_status in ('Approved', 'Rejected'):
+        icon = '✅' if new_status == 'Approved' else '❌'
+        msg = f"{icon} Your {leave['leave_type']} request ({leave['date_from']} – {leave['date_to']}) has been {new_status}."
+        _notify_employee(conn, leave['employee_id'], msg)
+
     cursor.close()
     conn.close()
-    return jsonify({'message': f'Leave {status}'})
+    return jsonify({'message': f'Leave {new_status}'})
 
 @records_bp.route('/api/leave/balance', methods=['GET'])
 @require_auth
@@ -400,6 +527,64 @@ def leave_balance():
         'vacation_leave': max(0, 15 - vacation_used)
     })
 
+# ─── Notifications ───────────────────────────────────────────
+def _notify_employee(conn, employee_id, message):
+    """Helper: insert a notification for an employee."""
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO notifications (employee_id, message) VALUES (%s, %s)',
+            (employee_id, message)
+        )
+        conn.commit()
+        cur.close()
+    except Exception as e:
+        print(f"Notification insert failed: {e}")
+
+@records_bp.route('/api/notifications', methods=['GET'])
+@require_auth
+def get_notifications():
+    emp_id = session['user'].get('employee_id')
+    if not emp_id:
+        return jsonify([])
+    conn = get_db()
+    if not conn: return jsonify({'error': 'DB error'}), 500
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        'SELECT * FROM notifications WHERE employee_id = %s ORDER BY created_at DESC LIMIT 20',
+        (emp_id,)
+    )
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify([serialize_dates(r) for r in rows])
+
+@records_bp.route('/api/notifications/<int:notif_id>/read', methods=['PUT'])
+@require_auth
+def mark_notification_read(notif_id):
+    conn = get_db()
+    if not conn: return jsonify({'error': 'DB error'}), 500
+    cursor = conn.cursor()
+    cursor.execute('UPDATE notifications SET is_read = 1 WHERE id = %s', (notif_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'Marked as read'})
+
+@records_bp.route('/api/notifications/read-all', methods=['PUT'])
+@require_auth
+def mark_all_notifications_read():
+    emp_id = session['user'].get('employee_id')
+    if not emp_id: return jsonify({'error': 'Not linked to employee'}), 400
+    conn = get_db()
+    if not conn: return jsonify({'error': 'DB error'}), 500
+    cursor = conn.cursor()
+    cursor.execute('UPDATE notifications SET is_read = 1 WHERE employee_id = %s', (emp_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'All notifications marked as read'})
+
 # ─── Activities ──────────────────────────────────────────────
 @records_bp.route('/api/activities', methods=['GET'])
 @require_auth
@@ -413,7 +598,7 @@ def get_activities():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify(rows)
+    return jsonify([serialize_dates(r) for r in rows])
 
 @records_bp.route('/api/activities', methods=['POST'])
 @require_auth

@@ -3,7 +3,12 @@
  * Handles fetching and displaying employee details using API utility.
  */
 
+if (!requireAuth()) { /* redirects handled inside */ }
+
 document.addEventListener('DOMContentLoaded', async () => {
+    const user = getCurrentUser();
+    if (!user) return;
+
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
 
@@ -11,6 +16,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         API.showToast("No Employee ID provided", "danger");
         window.location.href = 'employee_list.html';
         return;
+    }
+
+    if (user.role === 'employee') {
+        if (id !== user.employee_id) {
+            window.location.replace(`employee_info.html?id=${user.employee_id}`);
+            return;
+        }
+    }
+
+    const editBtn = document.getElementById('editProfileBtn');
+    if (editBtn) {
+        if (user.role === 'admin' || user.role === 'hr' ||
+            (user.role === 'employee' && user.employee_id === id)) {
+            editBtn.style.display = 'inline-block';
+        }
     }
 
     try {
@@ -49,4 +69,9 @@ function goToPayroll() {
 function goToPerformance() {
     const id = new URLSearchParams(window.location.search).get('id');
     window.location.href = `performance.html?id=${id}`;
+}
+
+function editProfile() {
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = `employee_edit.html?id=${params.get('id')}`;
 }

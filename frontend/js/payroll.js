@@ -1,43 +1,109 @@
-/**
- * payroll.js
- * Handles payroll generation using API utility.
- */
+if (!requireAuth()) { /* redirects */ }
+
+const user = getCurrentUser();
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 document.addEventListener('DOMContentLoaded', () => {
-    const btn    = document.getElementById('generatePayrollBtn');
-    const result = document.getElementById('result');
-    const empInput = document.getElementById('empId');
+    if (!user) return;
+    if (user.role === 'employee') {
+        // Employee: only sees their own history, no generator
+        loadHistory(user.employee_id);
+    } else {
+        // Admin / HR: show generator + search
+        document.getElementById('generatorCard').style.display = 'block';
+        document.getElementById('historySearchBox').style.display = 'block';
+        loadHistory(); // Load recent payslips
+    }
+});
 
-    btn.addEventListener('click', async () => {
-        const empId = empInput.value.trim();
-        if (!empId) {
-            API.showToast("Please enter an Employee ID", "warning");
+async function generatePayroll(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnGenerate');
+    const msg = document.getElementById('genMsg');
+    const empId = document.getElementById('empIdInput').value.trim();
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Calculating...';
+    msg.innerText = '';
+    document.getElementById('payslipResult').style.display = 'none';
+
+    try {
+        const res = await API.post('/api/payroll/generate', { employee_id: empId });
+        renderPayslip(res);
+        API.showToast('Payslip generated and saved!', 'success');
+        API.logActivity(`Generated payslip for ${empId} — Net: PHP ${res.net_salary}`);
+        loadHistory(empId);
+    } catch (err) {
+        msg.innerText = err.message || 'Failed to generate. Check if Service Records exist.';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-receipt me-2"></i> Calculate & Save Payslip';
+    }
+}
+
+function renderPayslip(res) {
+    document.getElementById('psEmpId').innerText        = res.employee_id;
+    document.getElementById('psBase').innerText         = 'PHP ' + res.base_salary;
+    document.getElementById('psDays').innerText         = res.work_days;
+    document.getElementById('psAllow').innerText        = '+ PHP ' + res.allowance;
+    document.getElementById('psDeduct').innerText       = '- PHP ' + res.deductions;
+    document.getElementById('psTax').innerText          = '- PHP ' + res.tax;
+    document.getElementById('psNet').innerText          = 'PHP ' + res.net_salary;
+    document.getElementById('psGeneratedBy').innerText  = res.generated_by || 'System';
+    document.getElementById('payslipPeriod').innerText  = res.period || '';
+    document.getElementById('payslipResult').style.display = 'block';
+    document.getElementById('payslipResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderPayslipFromRecord(rec) {
+    const monthName = MONTHS[(rec.period_month || 1) - 1] + ' ' + rec.period_year;
+    const fmtNum = n => parseFloat(n).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+    renderPayslip({
+        employee_id:  rec.employee_id,
+        base_salary:  fmtNum(rec.base_salary),
+        work_days:    rec.work_days,
+        allowance:    fmtNum(rec.allowance),
+        deductions:   fmtNum(rec.deductions),
+        tax:          fmtNum(rec.tax),
+        net_salary:   fmtNum(rec.net_salary),
+        generated_by: rec.generated_by || 'System',
+        period:       monthName
+    });
+}
+
+async function loadHistory(empId) {
+    const listEl = document.getElementById('payrollHistoryList');
+    listEl.innerHTML = '<div class="text-dim text-center py-4">Loading...</div>';
+
+    let url = '/api/payroll';
+    if (empId) url += `?employee_id=${encodeURIComponent(empId)}`;
+
+    try {
+        const records = await API.get(url);
+        if (!records.length) {
+            listEl.innerHTML = '<div class="text-dim text-center py-4"><i class="bi bi-inbox text-dim fs-2 d-block mb-2"></i>No payslips on record yet.</div>';
             return;
         }
 
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Calculating...';
-        result.innerHTML = '';
-        try {
-            const data = await API.post('/api/payroll/generate', { employee_id: empId });
-            
-            result.innerHTML = `
-                <div class="premium-card text-start fade-in" style="background: rgba(99, 102, 241, 0.05); border-color: var(--accent);">
-                    <div class="text-dim small mb-2 text-uppercase letter-spacing-1">GENERATED PAYSLIP</div>
-                    <div class="h3 mb-1" style="color: var(--accent); font-weight: 800;">PHP ${data.net_salary}</div>
-                    <div class="text-dim smaller">Employee ID: ${data.employee_id}</div>
-                    <div class="mt-3 small">
-                        <i class="bi bi-check-circle-fill text-success me-1"></i> Includes standard deductions & bonuses.
+        listEl.innerHTML = records.map(rec => {
+            const monthName = MONTHS[(rec.period_month || 1) - 1] + ' ' + rec.period_year;
+            const netFmt    = parseFloat(rec.net_salary).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            const dateFmt   = rec.created_at ? new Date(rec.created_at).toLocaleDateString('en-PH') : '';
+            return `
+            <div class="history-item" onclick='renderPayslipFromRecord(${JSON.stringify(rec)})'>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold text-white">${rec.employee_id}</div>
+                        <div class="text-dim small mt-1">${dateFmt} &nbsp;|&nbsp; Generated by: ${rec.generated_by || 'System'}</div>
+                    </div>
+                    <div class="text-end">
+                        <span class="period-badge">${monthName}</span>
+                        <div class="text-success fw-bold mt-1">PHP ${netFmt}</div>
                     </div>
                 </div>
-            `;
-            
-            API.logActivity(`Generated payroll for: ${empId}`);
-        } catch (err) {
-            // API utility shows toast
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-cpu me-2"></i> Calculate Net Salary';
-        }
-    });
-});
+            </div>`;
+        }).join('');
+    } catch (e) {
+        listEl.innerHTML = '<div class="text-danger text-center py-4">Failed to load payslip history.</div>';
+    }
+}
