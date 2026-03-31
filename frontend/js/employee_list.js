@@ -2,7 +2,8 @@ if (!requireAuth()) { /* redirects handled inside */ }
 const user = getCurrentUser();
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('userNameDisplay').innerText = user ? user.username : '';
+    const userNameDisplay = document.getElementById('userNameDisplay');
+    if (userNameDisplay) userNameDisplay.innerHTML = renderUserHeader(user);
 
     if (user.role === 'admin' || user.role === 'hr') {
         document.getElementById('searchFilters').style.display = 'block';

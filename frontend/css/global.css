@@ -315,6 +315,9 @@ option {
 
 .fade-in { animation: fadeIn 0.4s ease-out forwards; }
 
+.hover-white { color: var(--text-dim); transition: var(--transition); }
+.hover-white:hover { color: #fff; transform: rotate(30deg); }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-main); }

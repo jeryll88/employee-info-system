@@ -22,13 +22,7 @@ function initDashboardUI(user) {
 
     // Header Info
     const userInfo = document.getElementById('userInfo');
-    if (userInfo) {
-        userInfo.innerHTML = `
-            <span class="text-dim">Logged in as </span>
-            <strong class="text-white">${user.username}</strong>
-            &nbsp;${getRoleBadgeHtml(user.role)}
-        `;
-    }
+    if (userInfo) userInfo.innerHTML = renderUserHeader(user);
 
     // Role-based sections
     const adminOnlySections = ['statusBoxesSection'];
