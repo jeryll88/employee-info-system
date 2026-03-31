@@ -40,9 +40,9 @@ function requireRole(...roles) {
 }
 
 // ─── Login / Logout ───────────────────────────────────────────
-async function authLogin(username, password) {
+async function authLogin(username, password, role = 'admin') {
     // Uses the global API object from api.js
-    const data = await API.post('/api/auth/login', { username, password });
+    const data = await API.post('/api/auth/login', { username, password, role });
     setCurrentUser(data);
     return data;
 }

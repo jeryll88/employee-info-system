@@ -20,7 +20,8 @@ async function handleLogin() {
     try {
         await authLogin(
             document.getElementById('username').value.trim(), 
-            document.getElementById('password').value.trim()
+            document.getElementById('password').value.trim(),
+            selectedRole
         );
         window.location.href = 'dashboard.html';
     } catch (err) {

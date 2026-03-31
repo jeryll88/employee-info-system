@@ -38,6 +38,7 @@ def login():
     data = request.get_json()
     username = (data.get('username') or '').strip()
     password = (data.get('password') or '').strip()
+    req_role = (data.get('role') or 'admin').strip()
 
     if not username or not password:
         return jsonify({'error': 'Username and password required'}), 400
@@ -73,6 +74,13 @@ def login():
 
     if not is_correct:
         return jsonify({'error': 'Invalid username or password'}), 401
+
+    # Role check: Ensure user logs into the correct portal
+    # If user is 'admin', they MUST select 'admin' tab.
+    # If user is 'hr', they MUST select 'hr' tab.
+    # If user is 'employee', they MUST select 'employee' (Staff) tab.
+    if user['role'] != req_role:
+        return jsonify({'error': f'Unauthorized: This account is registered as {user["role"].upper()}, but you are trying to log in as {req_role.upper()}.'}), 403
 
     session['user'] = {
         'id':          user['id'],
