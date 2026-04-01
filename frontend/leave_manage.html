@@ -14,6 +14,7 @@
 <body class="fade-in">
 
 <div class="content container-fluid" style="max-width:1200px;">
+
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <h2 class="system-title">
@@ -24,13 +25,19 @@
         </button>
     </div>
 
-    <!-- Leaves Table -->
-    <div class="table-responsive bg-dark rounded p-3 border border-secondary shadow-lg">
-        <table class="table table-dark table-hover text-center align-middle">
+    <!-- ── Pending Requests ──────────────────────────────────── -->
+    <div class="mb-2 d-flex align-items-center gap-2">
+        <i class="bi bi-hourglass-split text-warning"></i>
+        <h5 class="mb-0 text-white">Pending Requests</h5>
+        <span class="badge bg-warning text-dark ms-1">Action Required</span>
+    </div>
+
+    <div class="table-responsive bg-dark rounded p-3 border border-secondary shadow-lg mb-4">
+        <table class="table table-dark table-hover text-center align-middle mb-0">
             <thead>
                 <tr class="text-dim small text-uppercase">
                     <th>Ticket</th>
-                    <th>Employee ID</th>
+                    <th>Employee</th>
                     <th>Type</th>
                     <th>Duration (Dates)</th>
                     <th>Reason</th>
@@ -38,11 +45,25 @@
                     <th>Action</th>
                 </tr>
             </thead>
-            <tbody id="leaveTableBody">
+            <tbody id="pendingTableBody">
                 <tr><td colspan="7" class="text-dim py-4">Loading requests...</td></tr>
             </tbody>
         </table>
     </div>
+
+    <!-- ── Approved Leaves by Employee ──────────────────────── -->
+    <div class="mb-3 d-flex align-items-center gap-2">
+        <i class="bi bi-person-lines-fill text-success"></i>
+        <h5 class="mb-0 text-white">Approved Leaves by Employee</h5>
+    </div>
+
+    <div class="bg-dark rounded p-4 border border-secondary shadow-lg" id="approvedSection">
+        <div class="text-dim text-center py-4">
+            <i class="bi bi-arrow-repeat fs-3 d-block mb-2"></i>
+            Loading...
+        </div>
+    </div>
+
 </div>
 
 <script src="./js/leave_manage.js"></script>
