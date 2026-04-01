@@ -37,21 +37,46 @@ CREATE TABLE IF NOT EXISTS leave_balances (
     CONSTRAINT fk_leave_employee FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Leave Requests table
+-- Leave Requests / Status table
 CREATE TABLE IF NOT EXISTS leaves (
     id INT AUTO_INCREMENT PRIMARY KEY,
     employee_id VARCHAR(255) NOT NULL,
-    leave_type ENUM('Sick Leave', 'Vacation Leave') NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    num_days INT NOT NULL,
+    leave_type VARCHAR(50) NOT NULL,
+    date_from DATE NOT NULL,
+    date_to DATE NOT NULL,
     reason TEXT,
-    status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
-    reviewed_by VARCHAR(255),
-    reviewed_at DATETIME,
-    remarks TEXT,
+    status VARCHAR(50) DEFAULT 'Pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_leaves_employee FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Notifications table
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    is_read TINYINT(1) DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_notif_employee FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Payroll Records table
+CREATE TABLE IF NOT EXISTS payroll_records (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id VARCHAR(255) NOT NULL,
+    employee_name VARCHAR(255),
+    period_month INT NOT NULL,
+    period_year INT NOT NULL,
+    base_salary DECIMAL(12,2) DEFAULT 0,
+    allowance DECIMAL(12,2) DEFAULT 0,
+    deductions DECIMAL(12,2) DEFAULT 0,
+    leave_deductions DECIMAL(12,2) DEFAULT 0,
+    tax DECIMAL(12,2) DEFAULT 0,
+    net_salary DECIMAL(12,2) DEFAULT 0,
+    work_days INT DEFAULT 0,
+    generated_by VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_payroll_employee FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Trainings table

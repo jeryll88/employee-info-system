@@ -19,7 +19,7 @@ async function loadLeaves() {
         employees.forEach(e => {
             const fullName = [e.first_name, e.middle_name, e.last_name]
                 .filter(Boolean).join(' ');
-            nameMap[e.id] = fullName || e.id;
+            nameMap[e.id.trim()] = fullName || e.id;
         });
 
         // ── Pending requests ────────────────────────────────────────
