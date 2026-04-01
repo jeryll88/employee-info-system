@@ -1,0 +1,1 @@
+[('activities',), ('attendance',), ('employees',), ('leave_balances',), ('leaves',), ('performance_evaluations',), ('service_records',), ('trainings',), ('users',)]

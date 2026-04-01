@@ -353,6 +353,11 @@ def generate_payroll():
     cursor = conn.cursor(dictionary=True)
     
     try:
+        # Get employee name
+        cursor.execute("SELECT first_name, last_name FROM employees WHERE id = %s", (emp_id,))
+        emp_record = cursor.fetchone()
+        employee_name = f"{emp_record['first_name']} {emp_record['last_name']}" if emp_record else "Unknown Employee"
+
         # 1. Get latest service record for salary
         cursor.execute('''
             SELECT salary_range FROM service_records 
@@ -371,7 +376,7 @@ def generate_payroll():
         else:
             base_salary = 20000.0
             
-        # 2. Get attendance for current month
+        # 2. Get attendance and leaves for current month
         now = datetime.now()
         cursor.execute('''
             SELECT COUNT(*) as days FROM attendance 
@@ -381,24 +386,35 @@ def generate_payroll():
         ''', (emp_id, now.month, now.year))
         attendance = cursor.fetchone()
         work_days = attendance['days'] if attendance else 0
+
+        cursor.execute('''
+            SELECT SUM(DATEDIFF(date_to, date_from) + 1) as leave_days
+            FROM leaves 
+            WHERE employee_id = %s 
+            AND status = 'Approved'
+            AND (MONTH(date_from) = %s AND YEAR(date_from) = %s)
+        ''', (emp_id, now.month, now.year))
+        leave_data = cursor.fetchone()
+        approved_leave_days = int(leave_data['leave_days'] or 0)
         
         # 3. Calculation
         allowance = work_days * 100.0
         deductions = 500.0
+        leave_deductions = round((base_salary / 22.0) * approved_leave_days, 2)
         tax = base_salary * 0.10
-        net_salary = base_salary + allowance - deductions - tax
+        net_salary = base_salary + allowance - deductions - leave_deductions - tax
 
         # 4. Save payslip record to DB
         generated_by = session['user'].get('username', 'system')
         cursor2 = conn.cursor()
         cursor2.execute('''
             INSERT INTO payroll_records 
-                (employee_id, period_month, period_year, base_salary, allowance, deductions, tax, net_salary, work_days, generated_by)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (employee_id, employee_name, period_month, period_year, base_salary, allowance, deductions, leave_deductions, tax, net_salary, work_days, generated_by)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ''', (
-            emp_id, now.month, now.year,
+            emp_id, employee_name, now.month, now.year,
             round(base_salary, 2), round(allowance, 2),
-            round(deductions, 2), round(tax, 2), round(net_salary, 2),
+            round(deductions, 2), leave_deductions, round(tax, 2), round(net_salary, 2),
             work_days, generated_by
         ))
         conn.commit()
@@ -410,10 +426,12 @@ def generate_payroll():
 
         return jsonify({
             'employee_id': emp_id,
+            'employee_name': employee_name,
             'base_salary': f"{base_salary:,.2f}",
             'work_days': work_days,
             'allowance': f"{allowance:,.2f}",
             'deductions': f"{deductions:,.2f}",
+            'leave_deductions': f"{leave_deductions:,.2f}",
             'tax': f"{tax:,.2f}",
             'net_salary': f"{net_salary:,.2f}",
             'currency': 'PHP',
@@ -437,9 +455,9 @@ def get_leaves():
     cursor = conn.cursor(dictionary=True)
     
     if role in ('admin', 'hr'):
-        cursor.execute('SELECT * FROM leave_requests ORDER BY created_at DESC')
+        cursor.execute('SELECT * FROM leaves ORDER BY created_at DESC')
     else:
-        cursor.execute('SELECT * FROM leave_requests WHERE employee_id = %s ORDER BY created_at DESC', (emp_id,))
+        cursor.execute('SELECT * FROM leaves WHERE employee_id = %s ORDER BY created_at DESC', (emp_id,))
         
     rows = cursor.fetchall()
     cursor.close()
@@ -457,7 +475,7 @@ def file_leave():
     cursor = conn.cursor()
     try:
         cursor.execute('''
-            INSERT INTO leave_requests (employee_id, leave_type, date_from, date_to, reason, status)
+            INSERT INTO leaves (employee_id, leave_type, date_from, date_to, reason, status)
             VALUES (%s, %s, %s, %s, %s, 'Pending')
         ''', (emp_id, data.get('leave_type'), data.get('date_from'), data.get('date_to'), data.get('reason')))
         conn.commit()
@@ -477,11 +495,11 @@ def update_leave(leave_id):
     cursor = conn.cursor(dictionary=True)
 
     # Get leave info for notification
-    cursor.execute('SELECT * FROM leave_requests WHERE id = %s', (leave_id,))
+    cursor.execute('SELECT * FROM leaves WHERE id = %s', (leave_id,))
     leave = cursor.fetchone()
 
     cursor2 = conn.cursor()
-    cursor2.execute('UPDATE leave_requests SET status = %s WHERE id = %s', (new_status, leave_id))
+    cursor2.execute('UPDATE leaves SET status = %s WHERE id = %s', (new_status, leave_id))
     conn.commit()
     cursor2.close()
 
@@ -505,7 +523,7 @@ def leave_balance():
     
     cursor.execute('''
         SELECT SUM(DATEDIFF(date_to, date_from) + 1) as used 
-        FROM leave_requests 
+        FROM leaves 
         WHERE employee_id = %s AND leave_type = 'Sick' AND status = 'Approved'
     ''', (emp_id,))
     row1 = cursor.fetchone()
@@ -513,7 +531,7 @@ def leave_balance():
     
     cursor.execute('''
         SELECT SUM(DATEDIFF(date_to, date_from) + 1) as used 
-        FROM leave_requests 
+        FROM leaves 
         WHERE employee_id = %s AND leave_type = 'Vacation' AND status = 'Approved'
     ''', (emp_id,))
     row2 = cursor.fetchone()
