@@ -387,20 +387,22 @@ def generate_payroll():
         attendance = cursor.fetchone()
         work_days = attendance['days'] if attendance else 0
 
+        # --- Refined Leave Deduction Logic ---
+        # Deduct for ALL approved leaves in the current month
         cursor.execute('''
             SELECT SUM(DATEDIFF(date_to, date_from) + 1) as leave_days
-            FROM leaves 
-            WHERE employee_id = %s 
-            AND status = 'Approved'
-            AND (MONTH(date_from) = %s AND YEAR(date_from) = %s)
-        ''', (emp_id, now.month, now.year))
+            FROM leaves
+            WHERE employee_id = %s AND status = 'Approved'
+            AND YEAR(date_from) = %s AND MONTH(date_from) = %s
+        ''', (emp_id, now.year, now.month))
         leave_data = cursor.fetchone()
         approved_leave_days = int(leave_data['leave_days'] or 0)
-        
+
         # 3. Calculation
         allowance = work_days * 100.0
         deductions = 500.0
-        leave_deductions = round((base_salary / 22.0) * approved_leave_days, 2)
+        daily_rate = base_salary / 22.0
+        leave_deductions = round(daily_rate * approved_leave_days, 2)
         tax = base_salary * 0.10
         net_salary = base_salary + allowance - deductions - leave_deductions - tax
 
