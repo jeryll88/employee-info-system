@@ -25,11 +25,13 @@ def run():
         CREATE TABLE IF NOT EXISTS payroll_records (
             id INT AUTO_INCREMENT PRIMARY KEY,
             employee_id VARCHAR(255) NOT NULL,
+            employee_name VARCHAR(255),
             period_month INT NOT NULL,
             period_year INT NOT NULL,
             base_salary DECIMAL(12,2) DEFAULT 0,
             allowance DECIMAL(12,2) DEFAULT 0,
             deductions DECIMAL(12,2) DEFAULT 0,
+            leave_deductions DECIMAL(12,2) DEFAULT 0,
             tax DECIMAL(12,2) DEFAULT 0,
             net_salary DECIMAL(12,2) DEFAULT 0,
             work_days INT DEFAULT 0,
