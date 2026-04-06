@@ -132,7 +132,7 @@
                                 <th>Duration</th>
                             </tr>
                         </thead>
-                        <tbody id="attendanceTableBody">
+                        <tbody id="empAttendanceTableBody">
                             <tr><td colspan="4" class="text-dim py-4">Loading records...</td></tr>
                         </tbody>
                     </table>
@@ -192,14 +192,15 @@
                     <table class="table table-dark table-hover text-center align-middle">
                         <thead>
                             <tr class="text-dim small text-uppercase">
+                                <th>Staff</th>
                                 <th>Date</th>
                                 <th>Check In</th>
                                 <th>Check Out</th>
                                 <th>Duration</th>
                             </tr>
                         </thead>
-                        <tbody id="attendanceTableBody">
-                            <tr><td colspan="4" class="text-dim py-4">Search an employee to view records.</td></tr>
+                        <tbody id="adminAttendanceTableBody">
+                            <tr><td colspan="5" class="text-dim py-4">Loading records...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -340,41 +341,58 @@ async function doCheckOut() {
 function initAdminPanel() {
     document.getElementById('adminPanel').style.display = 'block';
     document.getElementById('logDate').value = new Date().toISOString().split('T')[0];
+    loadAttendance(); // Load all by default
 }
 
 // ─── Shared: Load Attendance Table ────────────────────────────
-async function loadAttendance(empId) {
-    if (!empId) { API.showToast('Please provide an Employee ID', 'warning'); return; }
-
+async function loadAttendance(empId = '') {
     const titleEl = document.getElementById('tableTitle');
-    const tbody   = document.getElementById('attendanceTableBody');
+    const tbody   = (user.role === 'employee') 
+        ? document.getElementById('empAttendanceTableBody') 
+        : document.getElementById('adminAttendanceTableBody');
 
     if (user.role !== 'employee' && titleEl) {
-        titleEl.innerText = `Records for ${empId}`;
-        document.getElementById('logEmpId').value = empId;
+        titleEl.innerText = empId ? `Records for ${empId}` : 'All Staff Attendance History';
+        if (empId) document.getElementById('logEmpId').value = empId;
     }
 
-    if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-dim py-4">Loading...</td></tr>';
+    const colCount = (user.role === 'employee') ? 4 : 5;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-dim py-4">Loading...</td></tr>`;
 
     try {
-        const logs = await API.get(`/api/attendance?employee_id=${empId}`);
+        const url = empId ? `/api/attendance?employee_id=${empId}` : '/api/attendance';
+        const logs = await API.get(url);
+        
         if (!logs.length) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-dim py-4">No attendance records found.</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-dim py-4">No attendance records found.</td></tr>`;
             return;
         }
+
         tbody.innerHTML = logs.map(a => {
             const tin  = formatTime12Hour(a.time_in);
             const tout = formatTime12Hour(a.time_out);
             const dur  = calcDuration(a.time_in, a.time_out);
-            return `<tr>
-                <td class="fw-bold">${a.attendance_date}</td>
-                <td><span class="badge bg-success p-2">${tin}</span></td>
-                <td><span class="badge ${a.time_out ? 'bg-danger' : 'bg-secondary'} p-2">${tout}</span></td>
-                <td class="text-dim small">${dur}</td>
-            </tr>`;
+            const name = `<div class="text-white fw-bold">${a.first_name} ${a.last_name}</div><div class="small text-dim">${a.employee_id}</div>`;
+            
+            if (user.role === 'employee') {
+                return `<tr>
+                    <td class="fw-bold">${a.attendance_date}</td>
+                    <td><span class="badge bg-success p-2">${tin}</span></td>
+                    <td><span class="badge ${a.time_out ? 'bg-danger' : 'bg-secondary'} p-2">${tout}</span></td>
+                    <td class="text-dim small">${dur}</td>
+                </tr>`;
+            } else {
+                return `<tr>
+                    <td>${name}</td>
+                    <td class="fw-bold">${a.attendance_date}</td>
+                    <td><span class="badge bg-success p-2">${tin}</span></td>
+                    <td><span class="badge ${a.time_out ? 'bg-danger' : 'bg-secondary'} p-2">${tout}</span></td>
+                    <td class="text-dim small">${dur}</td>
+                </tr>`;
+            }
         }).join('');
     } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-danger py-4">Failed to load records.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-danger py-4">Failed to load records.</td></tr>`;
     }
 }
 
