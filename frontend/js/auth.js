@@ -60,7 +60,7 @@ function buildNav(role, activePage) {
     const user = getCurrentUser();
     const navItems = [
         { label: 'DASHBOARD',       icon: 'bi-speedometer2',   href: 'dashboard.html',    roles: ['admin','hr','employee'] },
-        { label: 'DIRECTORY',       icon: 'bi-people-fill',    href: 'employee_list.html',roles: ['admin','hr'] },
+        { label: 'DIRECTORY',       icon: 'bi-people-fill',    href: 'employee_list.html',roles: ['admin','hr','employee'] },
         { label: 'ATTENDANCE',      icon: 'bi-calendar-check', href: 'attendance.html',   roles: ['admin','hr','employee'] },
         { label: 'LEAVE REQUEST',   icon: 'bi-file-earmark-plus', href: 'leave_request.html',roles: ['employee'] },
         { label: 'LEAVES',          icon: 'bi-calendar3',      href: 'leave_manage.html', roles: ['admin','hr'] },
@@ -88,8 +88,8 @@ function buildNav(role, activePage) {
             }
 
             return `
-                <div class="col-md-2">
-                    <a href="${item.href}" class="nav-box ${isActive} text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" style="min-height: 80px;">
+                <div class="col">
+                    <a href="${item.href}" class="nav-box ${isActive} h-100 text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" style="min-height: 100px; padding: 20px;">
                         ${content}
                     </a>
                 </div>`;

@@ -35,34 +35,29 @@ def get_employees():
     cursor = conn.cursor(dictionary=True)
     role = session['user']['role']
     emp_id = session['user'].get('employee_id')
-
     q = request.args.get('q', '').strip()
     dept = request.args.get('department', '').strip()
     pos = request.args.get('position', '').strip()
     status = request.args.get('status', '').strip()
 
-    if role in ('admin', 'hr'):
-        query = 'SELECT * FROM employees WHERE 1=1'
-        params = []
-        if q:
-            query += ' AND (last_name LIKE %s OR first_name LIKE %s OR id LIKE %s)'
-            params.extend([f'%{q}%', f'%{q}%', f'%{q}%'])
-        if dept:
-            query += ' AND department = %s'
-            params.append(dept)
-        if pos:
-            query += ' AND position = %s'
-            params.append(pos)
-        if status:
-            query += ' AND status = %s'
-            params.append(status)
-            
-        query += ' ORDER BY last_name'
-        cursor.execute(query, tuple(params))
-        rows = cursor.fetchall()
-    else:
-        cursor.execute('SELECT * FROM employees WHERE id = %s', (emp_id,))
-        rows = cursor.fetchall()
+    query = 'SELECT * FROM employees WHERE 1=1'
+    params = []
+    if q:
+        query += ' AND (last_name LIKE %s OR first_name LIKE %s OR id LIKE %s)'
+        params.extend([f'%{q}%', f'%{q}%', f'%{q}%'])
+    if dept:
+        query += ' AND department = %s'
+        params.append(dept)
+    if pos:
+        query += ' AND position = %s'
+        params.append(pos)
+    if status:
+        query += ' AND status = %s'
+        params.append(status)
+        
+    query += ' ORDER BY last_name'
+    cursor.execute(query, tuple(params))
+    rows = cursor.fetchall()
 
     cursor.close()
     conn.close()
@@ -105,9 +100,6 @@ def get_next_employee_id():
 def get_employee(emp_id):
     role    = session['user']['role']
     my_emp  = session['user'].get('employee_id')
-
-    if role == 'employee' and my_emp != emp_id:
-        return jsonify({'error': 'Forbidden: can only view your own profile'}), 403
 
     conn = get_db()
     if not conn:
@@ -218,9 +210,9 @@ def update_employee(emp_id):
     conn.close()
     return jsonify({'message': 'Employee updated'})
 
-# ─── Delete Employee (Admin only) ─────────────────────────────
+# ─── Delete Employee (Admin and HR) ─────────────────────────────
 @employees_bp.route('/api/employees/<emp_id>', methods=['DELETE'])
-@require_role('admin')
+@require_role('admin', 'hr')
 def delete_employee(emp_id):
     conn = get_db()
     if not conn:

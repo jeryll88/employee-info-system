@@ -5,9 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const userNameDisplay = document.getElementById('userNameDisplay');
     if (userNameDisplay) userNameDisplay.innerHTML = renderUserHeader(user);
 
-    if (user.role === 'admin' || user.role === 'hr') {
-        document.getElementById('searchFilters').style.display = 'block';
-    }
+    // Everyone can see the search filters
+    document.getElementById('searchFilters').style.display = 'block';
 
     if (user.role === 'admin' || user.role === 'hr') {
         document.getElementById('adminActions').innerHTML = `
@@ -30,18 +29,17 @@ async function loadDirectory() {
     tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-dim">Loading...</td></tr>';
 
     let url = '/api/employees';
-    if (user.role === 'admin' || user.role === 'hr') {
-        const q = document.getElementById('filterQ').value.trim();
-        const dept = document.getElementById('filterDept').value.trim();
-        const status = document.getElementById('filterStatus').value.trim();
-        const params = new URLSearchParams();
-        if (q) params.append('q', q);
-        if (dept) params.append('department', dept);
-        if (status) params.append('status', status);
-        
-        const qs = params.toString();
-        if (qs) url += `?${qs}`;
-    }
+    // Let everyone use the filters
+    const q = document.getElementById('filterQ').value.trim();
+    const dept = document.getElementById('filterDept').value.trim();
+    const status = document.getElementById('filterStatus').value.trim();
+    const params = new URLSearchParams();
+    if (q) params.append('q', q);
+    if (dept) params.append('department', dept);
+    if (status) params.append('status', status);
+    
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
 
     try {
         const list = await API.get(url);
@@ -65,7 +63,7 @@ async function loadDirectory() {
                 <td class="text-end text-nowrap">
                     <a href="employee_info.html?id=${emp.id}" class="btn-secondary-custom me-1" style="padding:0.35rem 0.6rem;" title="View Profile"><i class="bi bi-person-lines-fill"></i></a>
                     ${(user.role === 'admin' || user.role === 'hr') ? `<a href="employee_edit.html?id=${emp.id}" class="btn-secondary-custom me-1" style="padding:0.35rem 0.6rem;" title="Edit details"><i class="bi bi-pencil-fill"></i></a>` : ''}
-                    ${user.role === 'admin' ? `<button class="btn-danger-custom" style="padding:0.35rem 0.6rem;" onclick="deleteEmployee('${emp.id}', '${emp.first_name}')" title="Remove"><i class="bi bi-trash-fill"></i></button>` : ''}
+                    ${(user.role === 'admin' || user.role === 'hr') ? `<button class="btn-danger-custom" style="padding:0.35rem 0.6rem;" onclick="deleteEmployee('${emp.id}', '${emp.first_name}')" title="Remove"><i class="bi bi-trash-fill"></i></button>` : ''}
                 </td>
             </tr>
         `).join('');
