@@ -223,6 +223,14 @@ function calcDuration(timeIn, timeOut) {
     return `${hrs}h ${mins}m`;
 }
 
+function formatTime12Hour(timeStr) {
+    if (!timeStr) return '—';
+    const [h, m] = timeStr.split(':').map(Number);
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${m.toString().padStart(2, '0')} ${suffix}`;
+}
+
 // ─── Live Clock ───────────────────────────────────────────────
 function startClock() {
     const clockEl = document.getElementById('clockTime');
@@ -230,8 +238,8 @@ function startClock() {
     if (!clockEl) return;
     const tick = () => {
         const now = new Date();
-        clockEl.textContent = now.toLocaleTimeString('en-PH', { hour12: false });
-        dateEl.textContent  = now.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        clockEl.textContent = now.toLocaleTimeString('en-US', { hour12: true });
+        dateEl.textContent  = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     };
     tick();
     setInterval(tick, 1000);
@@ -265,7 +273,7 @@ async function checkTodayStatus() {
             // Checked in, not out
             badge.className       = 'status-badge status-in';
             badge.innerHTML       = '<i class="bi bi-circle-fill" style="font-size:8px;"></i> CHECKED IN';
-            infoEl.innerHTML      = `<i class="bi bi-clock me-1"></i> In at <strong class="text-white">${rec.time_in.substring(0,5)}</strong>`;
+            infoEl.innerHTML      = `<i class="bi bi-clock me-1"></i> In at <strong class="text-white">${formatTime12Hour(rec.time_in)}</strong>`;
             btnIn.disabled        = true;
             btnOut.disabled       = false;
         } else {
@@ -273,8 +281,8 @@ async function checkTodayStatus() {
             badge.className       = 'status-badge status-out';
             badge.innerHTML       = '<i class="bi bi-check-circle-fill" style="font-size:14px;"></i> COMPLETED';
             infoEl.innerHTML      = `
-                <div><i class="bi bi-box-arrow-in-right me-1"></i> In: <strong class="text-white">${rec.time_in.substring(0,5)}</strong></div>
-                <div><i class="bi bi-box-arrow-right me-1"></i> Out: <strong class="text-white">${rec.time_out.substring(0,5)}</strong>
+                <div><i class="bi bi-box-arrow-in-right me-1"></i> In: <strong class="text-white">${formatTime12Hour(rec.time_in)}</strong></div>
+                <div><i class="bi bi-box-arrow-right me-1"></i> Out: <strong class="text-white">${formatTime12Hour(rec.time_out)}</strong>
                 &nbsp;|&nbsp; <span class="text-success">${calcDuration(rec.time_in, rec.time_out)}</span></div>`;
             btnIn.disabled        = true;
             btnOut.disabled       = true;
@@ -355,8 +363,8 @@ async function loadAttendance(empId) {
             return;
         }
         tbody.innerHTML = logs.map(a => {
-            const tin  = a.time_in  ? a.time_in.substring(0,5)  : '—';
-            const tout = a.time_out ? a.time_out.substring(0,5) : '—';
+            const tin  = formatTime12Hour(a.time_in);
+            const tout = formatTime12Hour(a.time_out);
             const dur  = calcDuration(a.time_in, a.time_out);
             return `<tr>
                 <td class="fw-bold">${a.attendance_date}</td>
