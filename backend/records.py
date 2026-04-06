@@ -11,12 +11,19 @@ def get_db():
     return _get_db()
 
 def serialize_dates(row):
-    """Convert date/datetime objects to strings for JSON serialization."""
+    """Convert date/datetime/timedelta objects to strings for JSON serialization."""
     if not row:
         return row
+    from datetime import timedelta
     for key, val in row.items():
         if isinstance(val, (date, datetime)):
             row[key] = val.isoformat()
+        elif isinstance(val, timedelta):
+            # Format timedelta as HH:MM:SS string
+            total_seconds = int(val.total_seconds())
+            hours, remainder = divmod(total_seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            row[key] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
     return row
 
 # ─── Trainings ───────────────────────────────────────────────
