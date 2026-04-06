@@ -215,17 +215,53 @@ def delete_service_record(id):
 @records_bp.route('/api/attendance', methods=['GET'])
 @require_auth
 def get_attendance():
-    emp_id = request.args.get('employee_id') or session['user'].get('employee_id')
+    role   = session['user']['role']
+    emp_id = request.args.get('employee_id')
+    
     conn = get_db()
     if not conn:
         return jsonify({'error': 'Database connection failed'}), 500
         
     cursor = conn.cursor(dictionary=True)
-    cursor.execute('SELECT * FROM attendance WHERE employee_id = %s ORDER BY attendance_date DESC', (emp_id,))
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return jsonify([serialize_dates(r) for r in rows])
+    
+    try:
+        if role in ('admin', 'hr'):
+            if emp_id:
+                # Specific employee
+                cursor.execute('''
+                    SELECT a.*, e.first_name, e.last_name 
+                    FROM attendance a
+                    JOIN employees e ON a.employee_id = e.id
+                    WHERE a.employee_id = %s 
+                    ORDER BY a.attendance_date DESC
+                ''', (emp_id,))
+            else:
+                # All staff
+                cursor.execute('''
+                    SELECT a.*, e.first_name, e.last_name 
+                    FROM attendance a
+                    JOIN employees e ON a.employee_id = e.id
+                    ORDER BY a.attendance_date DESC, a.time_in DESC
+                    LIMIT 200
+                ''')
+        else:
+            # Employee: own records only
+            my_emp_id = session['user'].get('employee_id')
+            cursor.execute('''
+                SELECT a.*, e.first_name, e.last_name 
+                FROM attendance a
+                JOIN employees e ON a.employee_id = e.id
+                WHERE a.employee_id = %s 
+                ORDER BY a.attendance_date DESC
+            ''', (my_emp_id,))
+            
+        rows = cursor.fetchall()
+        return jsonify([serialize_dates(r) for r in rows])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 @records_bp.route('/api/attendance/today', methods=['GET'])
 @require_auth

@@ -30,23 +30,55 @@ DB_CONFIG = {
     "database": os.getenv("DB_NAME", "eis")
 }
 
-# Connection Pool
-try:
-    db_pool = pooling.MySQLConnectionPool(
-        pool_name="eis_pool",
-        pool_size=5,
-        **DB_CONFIG
-    )
-except Exception as e:
-    print(f"Error creating DB pool: {e}")
+# Connection Pool helper
+db_pool = None
+
+def init_db_pool():
+    global db_pool
+    try:
+        # 1. Ensure database exists
+        conf_no_db = DB_CONFIG.copy()
+        db_name = conf_no_db.pop("database", "eis")
+        
+        conn = mysql.connector.connect(**conf_no_db)
+        cursor = conn.cursor()
+        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
+        cursor.close()
+        conn.close()
+
+        # 2. Create pool
+        db_pool = pooling.MySQLConnectionPool(
+            pool_name="eis_pool",
+            pool_size=10,
+            **DB_CONFIG
+        )
+        print("MariaDB connection pool initialized.")
+    except Exception as e:
+        print(f"Error initializing DB pool: {e}")
+        db_pool = None
+
+# Initial attempt
+init_db_pool()
 
 def get_db():
+    global db_pool
+    if not db_pool:
+        init_db_pool()
+    
+    if not db_pool:
+        return None
+
     try:
         conn = db_pool.get_connection()
         return conn
     except Exception as e:
-        print(f"Error getting connection: {e}")
-        return None
+        print(f"Error getting connection from pool: {e}")
+        # Try once more by re-init if it's a structural failure
+        init_db_pool()
+        try:
+            return db_pool.get_connection() if db_pool else None
+        except:
+            return None
 
 def init_db():
     schema_path = os.path.join(BASE_DIR, '..', 'db', 'mariadb_schema.sql')

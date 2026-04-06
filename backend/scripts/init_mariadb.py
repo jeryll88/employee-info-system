@@ -23,10 +23,15 @@ def init_db():
         cursor = conn.cursor()
         
         # 3. Load and execute schema
-        schema_path = os.path.join('sql', 'mariadb_schema.sql')
-        seed_path   = os.path.join('sql', 'mariadb_seed.sql')
+        base_path = os.path.join(os.path.dirname(__file__), '..', '..', 'db')
+        schema_path = os.path.abspath(os.path.join(base_path, 'mariadb_schema.sql'))
+        seed_path   = os.path.abspath(os.path.join(base_path, 'mariadb_seed.sql'))
         
         print(f"Loading schema from {schema_path}...")
+        if not os.path.exists(schema_path):
+            print(f"Error: Schema not found at {schema_path}")
+            return
+
         with open(schema_path, 'r') as f:
             commands = f.read().split(';')
             for cmd in commands:
@@ -34,11 +39,12 @@ def init_db():
                     cursor.execute(cmd)
         
         print(f"Loading seed from {seed_path}...")
-        with open(seed_path, 'r') as f:
-            commands = f.read().split(';')
-            for cmd in commands:
-                if cmd.strip():
-                    cursor.execute(cmd)
+        if os.path.exists(seed_path):
+            with open(seed_path, 'r') as f:
+                commands = f.read().split(';')
+                for cmd in commands:
+                    if cmd.strip():
+                        cursor.execute(cmd)
         
         conn.commit()
         print("Database 'eis' initialized successfully with schema and seed data.")
