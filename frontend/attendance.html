@@ -143,45 +143,40 @@
 
     <!-- ADMIN/HR: Search + Manual Log Panel -->
     <div id="adminPanel" style="display:none;">
-        <div class="clean-card mb-4 border border-secondary" style="background: rgba(0,0,0,0.2);">
-            <h6 class="text-white mb-3">View & Manage Employee Attendance</h6>
-            <div class="row g-3 align-items-end">
-                <div class="col-md-4">
-                    <input type="text" id="searchEmpId" class="form-control-custom" placeholder="Employee ID (e.g. EMP001)">
+        <div class="clean-card mb-5 border border-secondary" style="background: rgba(0,0,0,0.2); padding: 25px;">
+            <h6 class="text-white mb-3" style="font-size: 1.1rem;"><i class="bi bi-search me-2"></i>View & Manage Employee Attendance</h6>
+            <div class="row g-4 align-items-end">
+                <div class="col">
+                    <input type="text" id="searchEmpId" class="form-control-custom py-2" placeholder="Employee ID (e.g. EMP001)" style="font-size: 1.05rem;">
                 </div>
-                <div class="col-md-2">
-                    <button class="btn-primary-custom w-100" onclick="loadAttendance(document.getElementById('searchEmpId').value.trim())">
-                        <i class="bi bi-search me-2"></i> Load
+                <div class="col-md-3">
+                    <button class="btn-primary-custom w-100 py-2" style="font-size: 1.05rem;" onclick="loadAttendance(document.getElementById('searchEmpId').value.trim())">
+                        <i class="bi bi-search me-2"></i> Load Records
                     </button>
                 </div>
             </div>
         </div>
 
         <div class="row g-4">
-            <!-- Manual Log Form -->
+            <!-- Admin Clock Form -->
             <div class="col-md-4 mb-4">
                 <div class="clean-card h-100 border border-secondary">
-                    <h5 class="text-white mb-3"><i class="bi bi-pencil-square me-2"></i>Manual Log</h5>
-                    <form id="attendanceForm" onsubmit="logAttendance(event)">
-                        <div class="mb-3">
-                            <label class="form-label-custom">Employee ID</label>
-                            <input type="text" id="logEmpId" class="form-control-custom" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label-custom">Date</label>
-                            <input type="date" id="logDate" class="form-control-custom" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label-custom">Time In</label>
-                            <input type="time" id="logTimeIn" class="form-control-custom" required>
-                        </div>
+                    <h5 class="text-white mb-3"><i class="bi bi-clock-fill me-2"></i>Live Clock (Admin)</h5>
+                    <form id="attendanceForm" onsubmit="return false;">
                         <div class="mb-4">
-                            <label class="form-label-custom">Time Out</label>
-                            <input type="time" id="logTimeOut" class="form-control-custom">
-                            <div class="small text-dim mt-1">Leave blank if still working.</div>
+                            <label class="form-label-custom">Employee ID <span class="text-danger">*</span></label>
+                            <input type="text" id="logEmpId" class="form-control-custom" required placeholder="e.g. EMP001">
+                            <div class="small text-dim mt-2">Enter the ID and click a clock action below to securely capture exactly the current time.</div>
                         </div>
-                        <button type="submit" class="btn-success w-100 py-2 border-0 rounded fw-bold" id="btnLog">Save Log</button>
-                        <div id="logMsg" class="mt-2 text-danger small fw-medium text-center"></div>
+                        <div class="row g-2 mt-4">
+                            <div class="col-6">
+                                <button type="button" class="btn-success w-100 py-2 border-0 rounded fw-bold" onclick="adminClockIn()" id="btnLogIn">Clock In</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn-danger w-100 py-2 border-0 rounded fw-bold" onclick="adminClockOut()" id="btnLogOut">Clock Out</button>
+                            </div>
+                        </div>
+                        <div id="logMsg" class="mt-3 text-danger small fw-medium text-center"></div>
                     </form>
                 </div>
             </div>
@@ -197,10 +192,11 @@
                                 <th>Check In</th>
                                 <th>Check Out</th>
                                 <th>Duration</th>
+                                <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="adminAttendanceTableBody">
-                            <tr><td colspan="5" class="text-dim py-4">Loading records...</td></tr>
+                            <tr><td colspan="6" class="text-dim py-4">Loading records...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -278,14 +274,14 @@ async function checkTodayStatus() {
             btnIn.disabled        = true;
             btnOut.disabled       = false;
         } else {
-            // Fully clocked out
+            // Fully clocked out of previous session
             badge.className       = 'status-badge status-out';
-            badge.innerHTML       = '<i class="bi bi-check-circle-fill" style="font-size:14px;"></i> COMPLETED';
+            badge.innerHTML       = '<i class="bi bi-check-circle-fill" style="font-size:14px;"></i> CLOCKED OUT';
             infoEl.innerHTML      = `
-                <div><i class="bi bi-box-arrow-in-right me-1"></i> In: <strong class="text-white">${formatTime12Hour(rec.time_in)}</strong></div>
-                <div><i class="bi bi-box-arrow-right me-1"></i> Out: <strong class="text-white">${formatTime12Hour(rec.time_out)}</strong>
+                <div><i class="bi bi-box-arrow-in-right me-1"></i> Last In: <strong class="text-white">${formatTime12Hour(rec.time_in)}</strong></div>
+                <div><i class="bi bi-box-arrow-right me-1"></i> Last Out: <strong class="text-white">${formatTime12Hour(rec.time_out)}</strong>
                 &nbsp;|&nbsp; <span class="text-success">${calcDuration(rec.time_in, rec.time_out)}</span></div>`;
-            btnIn.disabled        = true;
+            btnIn.disabled        = false; // allow checking in again
             btnOut.disabled       = true;
         }
     } catch (e) {
@@ -300,7 +296,10 @@ async function doCheckIn() {
     msg.textContent = '';
 
     const now  = new Date();
-    const date = now.toISOString().split('T')[0];
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const date = `${yyyy}-${mm}-${dd}`;
     const time = now.toTimeString().split(' ')[0];
 
     try {
@@ -340,7 +339,6 @@ async function doCheckOut() {
 // ─── Admin / HR Panel ─────────────────────────────────────────
 function initAdminPanel() {
     document.getElementById('adminPanel').style.display = 'block';
-    document.getElementById('logDate').value = new Date().toISOString().split('T')[0];
     loadAttendance(); // Load all by default
 }
 
@@ -356,7 +354,7 @@ async function loadAttendance(empId = '') {
         if (empId) document.getElementById('logEmpId').value = empId;
     }
 
-    const colCount = (user.role === 'employee') ? 4 : 5;
+    const colCount = (user.role === 'employee') ? 4 : 6;
     if (tbody) tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-dim py-4">Loading...</td></tr>`;
 
     try {
@@ -388,6 +386,11 @@ async function loadAttendance(empId = '') {
                     <td><span class="badge bg-success p-2">${tin}</span></td>
                     <td><span class="badge ${a.time_out ? 'bg-danger' : 'bg-secondary'} p-2">${tout}</span></td>
                     <td class="text-dim small">${dur}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteAttendance(${a.id})" title="Delete Record">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                    </td>
                 </tr>`;
             }
         }).join('');
@@ -396,29 +399,77 @@ async function loadAttendance(empId = '') {
     }
 }
 
-async function logAttendance(e) {
-    e.preventDefault();
-    const btn = document.getElementById('btnLog');
+async function adminClockIn() {
+    const empId = document.getElementById('logEmpId').value.trim();
     const msg = document.getElementById('logMsg');
-    btn.disabled = true;
     msg.innerText = '';
+    
+    if (!empId) {
+        msg.innerText = 'Employee ID is required';
+        return;
+    }
+    
+    const btn = document.getElementById('btnLogIn');
+    btn.disabled = true;
 
-    const empId   = document.getElementById('logEmpId').value.trim();
-    const payload = {
-        employee_id:     empId,
-        attendance_date: document.getElementById('logDate').value,
-        time_in:         document.getElementById('logTimeIn').value,
-        time_out:        document.getElementById('logTimeOut').value || null
-    };
+    const now  = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const date = `${yyyy}-${mm}-${dd}`;
+    const time = now.toTimeString().split(' ')[0];
 
     try {
-        await API.post('/api/attendance', payload);
-        API.showToast('Attendance logged!', 'success');
+        await API.post('/api/attendance', {
+            employee_id: empId,
+            attendance_date: date,
+            time_in: time,
+            time_out: null
+        });
+        API.showToast(`Clocked IN for ${empId}`, 'success');
+        document.getElementById('logEmpId').value = '';
         loadAttendance(empId);
     } catch (err) {
-        msg.innerText = err.message || 'Failed to log attendance.';
+        msg.innerText = err.message || 'Check-in failed.';
     } finally {
         btn.disabled = false;
+    }
+}
+
+async function adminClockOut() {
+    const empId = document.getElementById('logEmpId').value.trim();
+    const msg = document.getElementById('logMsg');
+    msg.innerText = '';
+    
+    if (!empId) {
+        msg.innerText = 'Employee ID is required';
+        return;
+    }
+    
+    const btn = document.getElementById('btnLogOut');
+    btn.disabled = true;
+
+    try {
+        await API.put('/api/attendance/checkout', { employee_id: empId });
+        API.showToast(`Clocked OUT for ${empId}`, 'success');
+        document.getElementById('logEmpId').value = '';
+        loadAttendance(empId);
+    } catch (err) {
+        msg.innerText = err.message || 'Check-out failed.';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function deleteAttendance(id) {
+    if (!confirm('Are you sure you want to permanently delete this attendance record?')) return;
+    try {
+        await API.delete(`/api/attendance/${id}`);
+        API.showToast('Attendance record deleted successfully.', 'success');
+        const searchInput = document.getElementById('searchEmpId').value.trim();
+        loadAttendance(searchInput); // refresh with current search
+    } catch (err) {
+        alert(err.message || 'Failed to delete record.');
     }
 }
 

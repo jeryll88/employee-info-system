@@ -266,7 +266,7 @@ def get_attendance():
 @records_bp.route('/api/attendance/today', methods=['GET'])
 @require_auth
 def get_today_attendance():
-    """Returns today's attendance record for the current employee."""
+    """Returns today's attendance record (or active check-in) for the current employee."""
     emp_id = session['user'].get('employee_id')
     if not emp_id:
         return jsonify({'error': 'Not linked to employee'}), 400
@@ -278,7 +278,7 @@ def get_today_attendance():
 
     cursor = conn.cursor(dictionary=True)
     cursor.execute(
-        'SELECT * FROM attendance WHERE employee_id = %s AND attendance_date = %s',
+        'SELECT * FROM attendance WHERE employee_id = %s AND (attendance_date = %s OR time_out IS NULL) ORDER BY attendance_date DESC, id DESC LIMIT 1',
         (emp_id, today)
     )
     row = cursor.fetchone()
@@ -304,12 +304,8 @@ def log_attendance():
         return jsonify({'error': 'Database connection failed'}), 500
         
     cursor = conn.cursor(dictionary=True)
-    cursor.execute('SELECT id FROM attendance WHERE employee_id = %s AND attendance_date = %s', (emp_id, a_date))
-    existing = cursor.fetchone()
-    if existing:
-        cursor.execute('UPDATE attendance SET time_in = %s, time_out = %s WHERE id = %s', (t_in, t_out, existing['id']))
-    else:
-        cursor.execute('INSERT INTO attendance (employee_id, attendance_date, time_in, time_out) VALUES (%s, %s, %s, %s)', (emp_id, a_date, t_in, t_out))
+    # Always insert a new record so we don't overwrite previous check-ins for the same day
+    cursor.execute('INSERT INTO attendance (employee_id, attendance_date, time_in, time_out) VALUES (%s, %s, %s, %s)', (emp_id, a_date, t_in, t_out))
     
     conn.commit()
     cursor.close()
@@ -319,13 +315,14 @@ def log_attendance():
 @records_bp.route('/api/attendance/checkout', methods=['PUT'])
 @require_auth
 def checkout_attendance():
-    """Checks out the employee for today, recording time_out."""
-    emp_id = session['user'].get('employee_id')
+    """Checks out the employee by finding their active session and recording time_out."""
+    data = request.get_json(silent=True) or {}
+    role = session['user']['role']
+    emp_id = data.get('employee_id') if role in ('admin', 'hr') else session['user'].get('employee_id')
     if not emp_id:
-        return jsonify({'error': 'Not linked to employee'}), 400
+        return jsonify({'error': 'Not linked to employee or employee ID missing'}), 400
 
     now = datetime.now()
-    today = now.date().isoformat()
     time_out = now.strftime('%H:%M:%S')
 
     conn = get_db()
@@ -334,20 +331,34 @@ def checkout_attendance():
 
     cursor = conn.cursor(dictionary=True)
     cursor.execute(
-        'SELECT id FROM attendance WHERE employee_id = %s AND attendance_date = %s',
-        (emp_id, today)
+        'SELECT id FROM attendance WHERE employee_id = %s AND time_out IS NULL ORDER BY attendance_date DESC, id DESC LIMIT 1',
+        (emp_id,)
     )
     existing = cursor.fetchone()
     if not existing:
         cursor.close()
         conn.close()
-        return jsonify({'error': 'No check-in found for today. Please check in first.'}), 400
+        return jsonify({'error': 'No active check-in found. Please check in first.'}), 400
 
     cursor.execute('UPDATE attendance SET time_out = %s WHERE id = %s', (time_out, existing['id']))
     conn.commit()
     cursor.close()
     conn.close()
     return jsonify({'message': 'Checked out successfully', 'time_out': time_out})
+
+@records_bp.route('/api/attendance/<int:id>', methods=['DELETE'])
+@require_role('admin', 'hr')
+def delete_attendance(id):
+    conn = get_db()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+        
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM attendance WHERE id = %s', (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'Attendance record deleted'})
 
 # ─── Payroll ───────────────────────────────────────────────
 @records_bp.route('/api/payroll', methods=['GET'])
