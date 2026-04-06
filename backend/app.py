@@ -31,21 +31,25 @@ DB_CONFIG = {
 }
 
 # Connection Pool
+db_pool = None
 try:
     db_pool = pooling.MySQLConnectionPool(
         pool_name="eis_pool",
-        pool_size=5,
+        pool_size=10, # Increased for better concurrency
         **DB_CONFIG
     )
 except Exception as e:
     print(f"Error creating DB pool: {e}")
 
 def get_db():
+    if not db_pool:
+        print("db_pool is not initialized.")
+        return None
     try:
         conn = db_pool.get_connection()
         return conn
     except Exception as e:
-        print(f"Error getting connection: {e}")
+        print(f"Error getting connection from pool: {e}")
         return None
 
 def init_db():

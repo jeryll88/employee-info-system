@@ -136,6 +136,7 @@ def create_user():
     hashed_pw = generate_password_hash(password)
     
     conn = get_db()
+    if not conn: return jsonify({'error': 'Database connection failed'}), 500
     cursor = conn.cursor()
     try:
         cursor.execute(
@@ -158,6 +159,7 @@ def delete_user(user_id):
         return jsonify({'error': 'Cannot delete yourself'}), 403
         
     conn = get_db()
+    if not conn: return jsonify({'error': 'Database connection failed'}), 500
     cursor = conn.cursor()
     cursor.execute('DELETE FROM users WHERE id = %s', (user_id,))
     conn.commit()

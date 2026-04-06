@@ -10,20 +10,26 @@ def get_db():
     from app import get_db as _get_db
     return _get_db()
 
+from decimal import Decimal
+from datetime import date, datetime, time, timedelta
+
 def serialize_dates(row):
-    """Convert date/datetime/timedelta objects to strings for JSON serialization."""
+    """Convert date/datetime/time/timedelta/Decimal objects to strings for JSON serialization."""
     if not row:
         return row
-    from datetime import timedelta
     for key, val in row.items():
         if isinstance(val, (date, datetime)):
             row[key] = val.isoformat()
+        elif isinstance(val, time):
+            row[key] = val.strftime('%H:%M:%S')
         elif isinstance(val, timedelta):
             # Format timedelta as HH:MM:SS string
             total_seconds = int(val.total_seconds())
             hours, remainder = divmod(total_seconds, 3600)
             minutes, seconds = divmod(remainder, 60)
             row[key] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        elif isinstance(val, Decimal):
+            row[key] = float(val)
     return row
 
 # ─── Trainings ───────────────────────────────────────────────
@@ -481,15 +487,23 @@ def file_leave():
     if not emp_id: return jsonify({'error': 'Account not linked to an employee'}), 400
     
     conn = get_db()
-    cursor = conn.cursor()
+    if not conn: return jsonify({'error': 'Database connection failed'}), 500
+    cursor = conn.cursor(dictionary=True)
+    
     try:
+        # Verify employee exists to avoid foreign key constraint failure
+        cursor.execute('SELECT id FROM employees WHERE id = %s', (emp_id,))
+        if not cursor.fetchone():
+            return jsonify({'error': f'Employee record for ID {emp_id} not found. Please contact HR to link your account.'}), 404
+
         cursor.execute('''
             INSERT INTO leaves (employee_id, leave_type, date_from, date_to, reason, status)
             VALUES (%s, %s, %s, %s, %s, 'Pending')
         ''', (emp_id, data.get('leave_type'), data.get('date_from'), data.get('date_to'), data.get('reason')))
         conn.commit()
     except Exception as e:
-        return jsonify({'error': 'Failed to process request (are details valid?)'}), 400
+        print(f"Leave File Error: {e}")
+        return jsonify({'error': f'Failed to process request: {str(e)}'}), 400
     finally:
         cursor.close()
         conn.close()
@@ -501,6 +515,7 @@ def update_leave(leave_id):
     data = request.get_json()
     new_status = data.get('status')
     conn = get_db()
+    if not conn: return jsonify({'error': 'Database connection failed'}), 500
     cursor = conn.cursor(dictionary=True)
 
     # Get leave info for notification
@@ -528,6 +543,7 @@ def leave_balance():
     emp_id = session['user'].get('employee_id')
     if not emp_id: return jsonify({'sick_leave': 0, 'vacation_leave': 0})
     conn = get_db()
+    if not conn: return jsonify({'error': 'Database connection failed'}), 500
     cursor = conn.cursor(dictionary=True)
     
     cursor.execute('''
@@ -553,6 +569,23 @@ def leave_balance():
         'sick_leave': max(0, 15 - sick_used),
         'vacation_leave': max(0, 15 - vacation_used)
     })
+
+@records_bp.route('/api/leave/<int:leave_id>', methods=['DELETE'])
+@require_role('admin', 'hr')
+def delete_leave(leave_id):
+    conn = get_db()
+    if not conn: return jsonify({'error': 'Database connection failed'}), 500
+    cursor = conn.cursor()
+    try:
+        cursor.execute('DELETE FROM leaves WHERE id = %s', (leave_id,))
+        conn.commit()
+        return jsonify({'message': 'Leave record deleted successfully'})
+    except Exception as e:
+        print(f"Leave Delete Error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 # ─── Notifications ───────────────────────────────────────────
 def _notify_employee(conn, employee_id, message):
