@@ -486,7 +486,7 @@ async function doCheckOut() {
 function initAdminPanel() {
     document.getElementById('adminPanel').style.display = 'block';
     initCalendar();
-    loadAttendance();
+    loadAttendance(); // This will now show the search prompt state
 }
 
 async function loadAttendance(empId = '') {
@@ -496,12 +496,35 @@ async function loadAttendance(empId = '') {
         ? document.getElementById('empAttendanceTableBody') 
         : document.getElementById('adminAttendanceTableBody');
 
-    if (user.role !== 'employee' && titleEl) {
-        titleEl.innerText = empId ? `Records for ${empId}` : 'All Staff Attendance History';
-        if (empId) document.getElementById('logEmpId').value = empId;
+    const colCount = (user.role === 'employee') ? 4 : 6;
+
+    // For Admin/HR, if no specific employee ID is searched, show a search prompt instead of all staff
+    if (user.role !== 'employee' && !empId) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-dim py-5">
+            <i class="bi bi-search d-block fs-1 mb-2 opacity-25"></i>
+            Please search for an Employee ID to view records
+        </td></tr>`;
+        if (titleEl) titleEl.innerText = 'Search Employee Attendance';
+        
+        // Reset stats and calendar
+        ['countPresent', 'countAbsent', 'countLate', 'countLeave'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = '0';
+        });
+        if (calendar) calendar.setOption('events', []);
+        const previewEl = document.getElementById('monthlyRecordsPreview');
+        if (previewEl) previewEl.innerHTML = 'No employee searched.';
+        return;
     }
 
-    const colCount = (user.role === 'employee') ? 4 : 6;
+    if (user.role !== 'employee' && titleEl) {
+        titleEl.innerText = empId ? `Records for ${empId}` : 'All Staff Attendance History';
+        if (empId) {
+            const logIdEl = document.getElementById('logEmpId');
+            if (logIdEl) logIdEl.value = empId;
+        }
+    }
+
     if (tbody) tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-dim py-4">Loading...</td></tr>`;
 
     try {
