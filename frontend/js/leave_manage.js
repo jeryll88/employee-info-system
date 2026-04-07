@@ -85,7 +85,12 @@ async function loadLeaves() {
                             <span class="small text-dim">${l.date_from} <i class="bi bi-arrow-right mx-1"></i> ${l.date_to}</span>
                             <div class="small text-dim mt-1 text-truncate" style="max-width:400px;" title="${l.reason}">${l.reason}</div>
                         </div>
-                        <span class="badge bg-success p-2 align-self-center">Approved</span>
+                        <div class="align-self-center d-flex align-items-center gap-2">
+                            <span class="badge bg-success p-2">Approved</span>
+                            <button class="btn btn-sm btn-outline-danger border-0 p-1" onclick="deleteLeave(${l.id})" title="Delete Leave">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </div>
                     </div>`).join('');
 
                 return `
@@ -119,5 +124,16 @@ async function updateLeave(id, newStatus) {
         loadLeaves();
     } catch (err) {
         alert(err.message);
+    }
+}
+
+async function deleteLeave(id) {
+    if (!confirm(`Are you absolutely sure you want to permanently delete leave request #${id}?`)) return;
+    try {
+        await API.delete(`/api/leave/${id}`);
+        API.showToast(`Leave request #${id} deleted successfully.`, 'success');
+        loadLeaves();
+    } catch (err) {
+        alert(err.message || 'Failed to delete leave request.');
     }
 }
