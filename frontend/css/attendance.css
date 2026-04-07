@@ -142,6 +142,63 @@ body::before {
     justify-content: center;
 }
 
+/* Employee Accordion Styles */
+.employee-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.employee-row {
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 18px 25px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.employee-row:hover {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(168, 85, 247, 0.4);
+    transform: translateX(5px);
+}
+
+.employee-row.active {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-color: rgba(168, 85, 247, 0.6);
+    background: rgba(168, 85, 247, 0.05);
+}
+
+.employee-info h6 { margin: 0; font-weight: 700; color: #fff; }
+.employee-info span { font-size: 0.85rem; color: #94a3b8; }
+
+.chevron-icon {
+    transition: transform 0.3s ease;
+    color: #94a3b8;
+}
+.active .chevron-icon { transform: rotate(180deg); color: #a855f7; }
+
+.employee-details {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(15, 23, 42, 0.2);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-top: none;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+}
+
+.employee-details.show {
+    max-height: 2000px; /* Large enough for tables */
+    padding: 25px;
+}
+
 /* System Title Override */
 .system-title {
     background: linear-gradient(90deg, #f1f5f9, #94a3b8);
@@ -150,4 +207,4 @@ body::before {
     color: transparent;
     font-weight: 800;
     font-size: 2.25rem;
-}
+}
