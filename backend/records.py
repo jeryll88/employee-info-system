@@ -298,6 +298,7 @@ def log_attendance():
     a_date = data.get('attendance_date')
     t_in   = data.get('time_in')
     t_out  = data.get('time_out')
+    status = data.get('status', 'Present')
 
     conn = get_db()
     if not conn:
@@ -305,7 +306,7 @@ def log_attendance():
         
     cursor = conn.cursor(dictionary=True)
     # Always insert a new record so we don't overwrite previous check-ins for the same day
-    cursor.execute('INSERT INTO attendance (employee_id, attendance_date, time_in, time_out) VALUES (%s, %s, %s, %s)', (emp_id, a_date, t_in, t_out))
+    cursor.execute('INSERT INTO attendance (employee_id, attendance_date, time_in, time_out, status) VALUES (%s, %s, %s, %s, %s)', (emp_id, a_date, t_in, t_out, status))
     
     conn.commit()
     cursor.close()
