@@ -531,16 +531,24 @@ def file_leave():
     emp_id = session['user'].get('employee_id')
     if not emp_id: return jsonify({'error': 'Account not linked to an employee'}), 400
     
+    leave_type = data.get('leave_type')
+    date_from  = data.get('date_from')
+    date_to    = data.get('date_to')
+    reason     = data.get('reason')
+
+    if not all([leave_type, date_from, date_to]):
+        return jsonify({'error': 'Missing required fields: leave_type, date_from, and date_to are mandatory.'}), 400
+    
     conn = get_db()
     cursor = conn.cursor()
     try:
         cursor.execute('''
             INSERT INTO leaves (employee_id, leave_type, date_from, date_to, reason, status)
             VALUES (%s, %s, %s, %s, %s, 'Pending')
-        ''', (emp_id, data.get('leave_type'), data.get('date_from'), data.get('date_to'), data.get('reason')))
+        ''', (emp_id, leave_type, date_from, date_to, reason))
         conn.commit()
     except Exception as e:
-        return jsonify({'error': 'Failed to process request (are details valid?)'}), 400
+        return jsonify({'error': f"Database error: {str(e)}"}), 500
     finally:
         cursor.close()
         conn.close()
