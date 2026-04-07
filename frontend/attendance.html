@@ -205,7 +205,7 @@
                                 <option value="Present">Present</option>
                                 <option id="optionAbsent" value="Absent">Absent</option>
                                 <option id="optionLate" value="Late">Late</option>
-                                <option value="On Leave">On Leave</option>
+                                <option id="optionLeave" value="On Leave">On Leave</option>
                             </select>
                         </div>
                         <button class="btn-save-status w-100 py-3 mb-2" onclick="saveTodayStatus()">
@@ -625,6 +625,12 @@ async function loadAttendance(empId) {
         if (statusInfo) statusInfo.innerText = todayLog ? `Current Status: ${currentStatus}` : "Not yet marked for today";
 
         if (isEmp && clockBadge) {
+            // Hide administrative marking options for employees
+            const optAbs = document.getElementById('optionAbsent');
+            const optLeave = document.getElementById('optionLeave');
+            if (optAbs) optAbs.style.display = 'none';
+            if (optLeave) optLeave.style.display = 'none';
+
             // Further update clock elements if it's the employee viewing themselves
             if (!todayLog) {
                 clockBadge.className = 'status-badge status-none';
