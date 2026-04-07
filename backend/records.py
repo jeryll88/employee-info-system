@@ -298,7 +298,19 @@ def log_attendance():
     a_date = data.get('attendance_date')
     t_in   = data.get('time_in')
     t_out  = data.get('time_out')
-    status = data.get('status', 'Present')
+    
+    # Handle status: use provided status or calculate based on check-in time
+    status = data.get('status')
+    if t_in and not status:
+        # Check if t_in is after 8:00 AM (08:00:00)
+        if t_in > '08:00:00':
+            status = 'Late'
+        else:
+            status = 'Present'
+    
+    # Fallback to 'Present' if still not set
+    if not status:
+        status = 'Present'
 
     if status == 'Absent' and role not in ('hr', 'admin'):
         return jsonify({'error': 'Unauthorized to mark as Absent. Contact HR/Admin.'}), 403
