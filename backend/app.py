@@ -4,12 +4,28 @@ import mysql.connector
 from mysql.connector import pooling
 import os
 import json
+from datetime import date, datetime, timedelta
+from flask.json.provider import DefaultJSONProvider
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.join(BASE_DIR, '..', 'frontend')
 
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
 app.secret_key = "eis_secret_key_2026"
+
+class CustomJSONProvider(DefaultJSONProvider):
+    def default(self, obj):
+        if isinstance(obj, (date, datetime)):
+            return obj.isoformat()
+        if isinstance(obj, timedelta):
+            # Format timedelta as HH:MM:SS string
+            total_seconds = int(obj.total_seconds())
+            hours, remainder = divmod(total_seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        return super().default(obj)
+
+app.json = CustomJSONProvider(app)
 
 # CORS: Allow same origin and browser defaults
 CORS(app, supports_credentials=True, origins=[

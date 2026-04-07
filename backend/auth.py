@@ -13,12 +13,24 @@ def get_db():
 
 # ─── Role decorator ───────────────────────────────────────────
 def require_role(*roles):
+    # Normalize roles to lowercase for robust comparison
+    allowed_roles = [r.lower() for r in roles]
+    
     def decorator(f):
         @wraps(f)
         def decorated(*args, **kwargs):
             if 'user' not in session:
                 return jsonify({'error': 'Not authenticated'}), 401
-            if session['user']['role'] not in roles:
+            
+            # Extract and normalize session role
+            user_role = str(session['user'].get('role', '')).strip().lower()
+            
+            # ─── Superuser Rule ──────────────────────────────────
+            # 'admin' has inherent access to all administrative tasks (hr or admin)
+            if user_role == 'admin':
+                return f(*args, **kwargs)
+            
+            if user_role not in allowed_roles:
                 return jsonify({'error': 'Forbidden: insufficient permissions'}), 403
             return f(*args, **kwargs)
         return decorated

@@ -10,19 +10,7 @@ def get_db():
     from app import get_db as _get_db
     return _get_db()
 
-def serialize_employee(row):
-    """Convert date objects to ISO strings for JSON serialization."""
-    if row is None:
-        return row
-    if isinstance(row.get('birthday'), date):
-        row['birthday'] = row['birthday'].isoformat()
-    if isinstance(row.get('date_hired'), date):
-        row['date_hired'] = row['date_hired'].isoformat()
-    if isinstance(row.get('created_at'), date):
-        row['created_at'] = str(row['created_at'])
-    if isinstance(row.get('updated_at'), date):
-        row['updated_at'] = str(row['updated_at'])
-    return row
+# Redundant serialization removed. Global fix in app.py handles date/datetime.
 
 # ─── Get All Employees (Admin/HR: all | Employee: own) ─────────
 @employees_bp.route('/api/employees', methods=['GET'])
@@ -61,7 +49,7 @@ def get_employees():
 
     cursor.close()
     conn.close()
-    return jsonify([serialize_employee(r) for r in rows])
+    return jsonify(rows)
 
 # ─── Get Next Employee ID (Auto-generation) ────────────────────
 @employees_bp.route('/api/employees/next-id', methods=['GET'])
@@ -114,7 +102,7 @@ def get_employee(emp_id):
     if not row:
         return jsonify({'error': 'Employee not found'}), 404
 
-    return jsonify(serialize_employee(row))
+    return jsonify(row)
 
 # ─── Add Employee (Admin only) ─────────────────────────────────
 @employees_bp.route('/api/employees', methods=['POST'])

@@ -10,21 +10,7 @@ def get_db():
     from app import get_db as _get_db
     return _get_db()
 
-def serialize_dates(row):
-    """Convert date/datetime/timedelta objects to strings for JSON serialization."""
-    if not row:
-        return row
-    from datetime import timedelta
-    for key, val in row.items():
-        if isinstance(val, (date, datetime)):
-            row[key] = val.isoformat()
-        elif isinstance(val, timedelta):
-            # Format timedelta as HH:MM:SS string
-            total_seconds = int(val.total_seconds())
-            hours, remainder = divmod(total_seconds, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            row[key] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-    return row
+# Redundant serialization removed. Global fix in app.py handles date/datetime/timedelta.
 
 # ─── Trainings ───────────────────────────────────────────────
 @records_bp.route('/api/trainings', methods=['GET'])
@@ -42,7 +28,7 @@ def get_trainings():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify([serialize_dates(r) for r in rows])
+    return jsonify(rows)
 
 @records_bp.route('/api/trainings', methods=['POST'])
 @require_role('admin', 'hr')
@@ -93,7 +79,7 @@ def get_training(id):
     cursor.close()
     conn.close()
     if not row: return jsonify({'error': 'Training not found'}), 404
-    return jsonify(serialize_dates(row))
+    return jsonify(row)
 
 @records_bp.route('/api/trainings/<int:id>', methods=['PUT'])
 @require_role('admin', 'hr')
@@ -129,7 +115,7 @@ def get_service_records():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify([serialize_dates(r) for r in rows])
+    return jsonify(rows)
 
 @records_bp.route('/api/service_records', methods=['POST'])
 @require_role('admin', 'hr')
@@ -171,7 +157,7 @@ def get_service_record(id):
     cursor.close()
     conn.close()
     if not row: return jsonify({'error': 'Record not found'}), 404
-    return jsonify(serialize_dates(row))
+    return jsonify(row)
 
 @records_bp.route('/api/service_records/<int:id>', methods=['PUT'])
 @require_role('admin', 'hr')
@@ -256,7 +242,7 @@ def get_attendance():
             ''', (my_emp_id,))
             
         rows = cursor.fetchall()
-        return jsonify([serialize_dates(r) for r in rows])
+        return jsonify(rows)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
@@ -284,7 +270,7 @@ def get_today_attendance():
     row = cursor.fetchone()
     cursor.close()
     conn.close()
-    return jsonify(serialize_dates(row) if row else {})
+    return jsonify(row if row else {})
 
 @records_bp.route('/api/attendance', methods=['POST'])
 @require_auth
@@ -409,7 +395,7 @@ def get_payroll_history():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify([serialize_dates(r) for r in rows])
+    return jsonify(rows)
 
 @records_bp.route('/api/payroll/generate', methods=['POST'])
 @require_role('admin', 'hr')
@@ -497,6 +483,7 @@ def generate_payroll():
         _notify_employee(conn, emp_id, f"Your payslip for {month_name} has been generated. Net Pay: PHP {net_salary:,.2f}")
 
         return jsonify({
+            'id': cursor2.lastrowid,
             'employee_id': emp_id,
             'employee_name': employee_name,
             'base_salary': f"{base_salary:,.2f}",
@@ -514,6 +501,38 @@ def generate_payroll():
     finally:
         cursor.close()
         conn.close()
+
+@records_bp.route('/api/payroll/<int:id>', methods=['DELETE'])
+@require_auth
+def delete_payroll(id):
+    user = session['user']
+    role = user['role']
+    emp_id = user.get('employee_id')
+
+    conn = get_db()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+        
+    cursor = conn.cursor(dictionary=True)
+    
+    # If not admin/hr, verify it's the employee's own record
+    if role not in ('admin', 'hr'):
+        cursor.execute('SELECT employee_id FROM payroll_records WHERE id = %s', (id,))
+        rec = cursor.fetchone()
+        if not rec:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Record not found'}), 404
+        if rec['employee_id'] != emp_id:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Unauthorized to delete this record'}), 403
+
+    cursor.execute('DELETE FROM payroll_records WHERE id = %s', (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'Payroll record deleted'})
 
 # ─── Leave Requests ──────────────────────────────────────────
 @records_bp.route('/api/leave', methods=['GET'])
@@ -534,7 +553,7 @@ def get_leaves():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify([serialize_dates(r) for r in rows])
+    return jsonify(rows)
 
 @records_bp.route('/api/leave', methods=['POST'])
 @require_auth
@@ -665,7 +684,7 @@ def get_notifications():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify([serialize_dates(r) for r in rows])
+    return jsonify(rows)
 
 @records_bp.route('/api/notifications/<int:notif_id>/read', methods=['PUT'])
 @require_auth
@@ -706,7 +725,7 @@ def get_activities():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify([serialize_dates(r) for r in rows])
+    return jsonify(rows)
 
 @records_bp.route('/api/activities', methods=['POST'])
 @require_auth

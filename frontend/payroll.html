@@ -103,9 +103,12 @@
                 <div class="display-5 fw-black text-success" id="psNet">PHP 0.00</div>
             </div>
 
-            <div class="text-center mt-3">
+            <div class="text-center mt-3 d-flex justify-content-center gap-2">
                 <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
                     <i class="bi bi-printer me-1"></i> Print Payslip
+                </button>
+                <button class="btn btn-outline-danger btn-sm" id="btnDeleteDetail" style="display:none;" onclick="deleteCurrentPayslip()">
+                    <i class="bi bi-trash me-1"></i> Delete Payslip
                 </button>
             </div>
         </div>
