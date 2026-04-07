@@ -323,3 +323,38 @@ option {
 ::-webkit-scrollbar-track { background: var(--bg-main); }
 ::-webkit-scrollbar-thumb { background: var(--navy-light); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ─── Expandable History Styles ────────────────────────────── */
+
+.clickable-header {
+    transition: var(--transition);
+    user-select: none;
+    border-radius: 8px;
+}
+
+.clickable-header:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.transition-icon {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 1.2rem;
+}
+
+.bi-chevron-up {
+    transform: rotate(180deg);
+}
+
+.history-content {
+    animation: slideDown 0.3s ease-out;
+    overflow: hidden;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.extra-small {
+    font-size: 11px;
+}

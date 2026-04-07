@@ -85,22 +85,31 @@ async function loadLeaves() {
                             <span class="small text-dim">${l.date_from} <i class="bi bi-arrow-right mx-1"></i> ${l.date_to}</span>
                             <div class="small text-dim mt-1 text-truncate" style="max-width:400px;" title="${l.reason}">${l.reason}</div>
                         </div>
-                        <span class="badge bg-success p-2 align-self-center">Approved</span>
+                        <div class="align-self-center d-flex align-items-center gap-2">
+                            <span class="badge bg-success p-2">Approved</span>
+                            <button class="btn btn-sm btn-outline-danger border-0 p-1" onclick="deleteLeave(${l.id})" title="Delete Leave">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </div>
                     </div>`).join('');
 
                 return `
                 <div class="employee-leave-group mb-4">
-                    <div class="d-flex align-items-center gap-2 mb-2 pb-1" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
-                             style="width:36px;height:36px;background:linear-gradient(135deg,#6366f1,#8b5cf6);font-size:14px;flex-shrink:0;">
-                            ${empName.charAt(0).toUpperCase()}
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 clickable-header" 
+                         onclick="window.location.href='employee_history.html?id=${empId}&tab=leave'"
+                         style="border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer;">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
+                                 style="width:36px;height:36px;background:linear-gradient(135deg,#6366f1,#8b5cf6);font-size:14px;flex-shrink:0;">
+                                ${empName.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <div class="fw-bold text-white">${empName}</div>
+                                <div class="text-dim small">${empId} &bull; ${empLeaves.length} approved leave${empLeaves.length > 1 ? 's' : ''}</div>
+                            </div>
                         </div>
-                        <div>
-                            <div class="fw-bold text-white">${empName}</div>
-                            <div class="text-dim small">${empId} &bull; ${empLeaves.length} approved leave${empLeaves.length > 1 ? 's' : ''}</div>
-                        </div>
+                        <i class="bi bi-arrow-right text-dim transition-icon"></i>
                     </div>
-                    ${leaveRows}
                 </div>`;
             }).join('');
         }
@@ -108,6 +117,25 @@ async function loadLeaves() {
     } catch (e) {
         pendingBody.innerHTML = '<tr><td colspan="7" class="text-danger py-4">Failed to load leave requests.</td></tr>';
         console.error(e);
+    }
+}
+
+function toggleHistory(id, headerEl) {
+    const el = document.getElementById(id);
+    const icon = headerEl.querySelector('.bi-chevron-down, .bi-chevron-up');
+    
+    if (el.style.display === 'none') {
+        el.style.display = 'block';
+        if (icon) {
+            icon.classList.remove('bi-chevron-down');
+            icon.classList.add('bi-chevron-up');
+        }
+    } else {
+        el.style.display = 'none';
+        if (icon) {
+            icon.classList.remove('bi-chevron-up');
+            icon.classList.add('bi-chevron-down');
+        }
     }
 }
 
@@ -119,5 +147,16 @@ async function updateLeave(id, newStatus) {
         loadLeaves();
     } catch (err) {
         alert(err.message);
+    }
+}
+
+async function deleteLeave(id) {
+    if (!confirm(`Are you absolutely sure you want to permanently delete leave request #${id}?`)) return;
+    try {
+        await API.delete(`/api/leave/${id}`);
+        API.showToast(`Leave request #${id} deleted successfully.`, 'success');
+        loadLeaves();
+    } catch (err) {
+        alert(err.message || 'Failed to delete leave request.');
     }
 }

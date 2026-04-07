@@ -103,8 +103,7 @@ async function loadEmployeeStats() {
 async function loadLeaveBalance() {
     try {
         const data = await API.get('/api/leave/balance');
-        document.getElementById('sickBalance').textContent     = data.sick_leave    ?? '0';
-        document.getElementById('vacationBalance').textContent = data.vacation_leave ?? '0';
+        document.getElementById('totalRemaining').textContent = data.total_remaining ?? '0';
     } catch (e) {}
 }
 
