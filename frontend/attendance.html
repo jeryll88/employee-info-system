@@ -9,6 +9,8 @@
 <link rel="stylesheet" href="./css/global.css">
 <link rel="stylesheet" href="./css/attendance.css">
 <script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- FullCalendar 6 -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
 <script src="./js/api.js"></script>
 <script src="./js/auth.js"></script>
 <style>
@@ -122,7 +124,10 @@
             <!-- My Attendance History -->
             <div class="col-md-7">
                 <div class="table-responsive bg-dark rounded p-3 border border-secondary shadow-lg h-100">
-                    <h5 class="text-white mb-3"><i class="bi bi-clock-history me-2"></i>My Attendance History</h5>
+                    <h5 class="text-white mb-3 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-clock-history me-2"></i>My Attendance History</span>
+                        <span class="small text-dim fw-normal" id="currentMonthLabel"></span>
+                    </h5>
                     <table class="table table-dark table-hover text-center align-middle">
                         <thead>
                             <tr class="text-dim small text-uppercase">
@@ -141,10 +146,100 @@
         </div>
     </div>
 
-    <!-- ADMIN/HR: Search + Manual Log Panel -->
+    <!-- Main Attendance Tracking Section -->
+    <div id="attendanceTrackingSection" class="mt-4">
+        <div class="row g-4">
+            <!-- Left Side: Calendar and Bottom Statistics -->
+            <div class="col-lg-8">
+                <div class="attendance-card h-100 p-4 border border-secondary shadow-lg">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="text-white fw-bold mb-0">Attendance Tracking</h5>
+                        <div id="calendarNav" class="d-flex align-items-center gap-3">
+                            <button class="btn btn-sm btn-outline-light px-3" onclick="calendar.prev()"><i class="bi bi-chevron-left"></i></button>
+                            <span class="text-white fw-bold h5 mb-0" id="calendarTitle"></span>
+                            <button class="btn btn-sm btn-outline-light px-3" onclick="calendar.next()"><i class="bi bi-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div id="attendanceCalendar" style="min-height: 500px;"></div>
+
+                    <!-- Bottom Status Counters -->
+                    <div class="row mt-5 text-center g-2">
+                        <div class="col-3">
+                            <div class="stat-box">
+                                <div class="h3 fw-bold mb-0 text-success" id="countPresent">0</div>
+                                <div class="small text-dim text-uppercase fw-bold ls-1">Present</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="stat-box">
+                                <div class="h3 fw-bold mb-0 text-danger" id="countAbsent">0</div>
+                                <div class="small text-dim text-uppercase fw-bold ls-1">Absent</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="stat-box">
+                                <div class="h3 fw-bold mb-0 text-warning" id="countLate">0</div>
+                                <div class="small text-dim text-uppercase fw-bold ls-1">Late</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="stat-box">
+                                <div class="h3 fw-bold mb-0 text-primary" id="countLeave">0</div>
+                                <div class="small text-dim text-uppercase fw-bold ls-1">On Leave</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Today's Status and Monthly Summary -->
+            <div class="col-lg-4">
+                <div class="side-panel h-100 p-4">
+                    <!-- Today's Status Control (Employee only) -->
+                    <div class="mb-5" id="todayStatusControl" style="display:none;">
+                        <h6 class="text-dim text-uppercase fw-bold mb-3 ls-1">Today's Status</h6>
+                        <div class="mb-3">
+                            <select id="statusSelect" class="form-select-custom w-100 py-3 px-4">
+                                <option value="" disabled selected>-- Mark --</option>
+                                <option value="Present">Present</option>
+                                <option id="optionAbsent" value="Absent">Absent</option>
+                                <option id="optionLate" value="Late">Late</option>
+                                <option value="On Leave">On Leave</option>
+                            </select>
+                        </div>
+                        <button class="btn-save-status w-100 py-3 mb-2" onclick="saveTodayStatus()">
+                            <i class="bi bi-check-circle-fill me-2"></i> Save Changes
+                        </button>
+                        <div id="statusInfo" class="small text-dim mt-2">Not yet marked for today</div>
+                    </div>
+
+                    <!-- Today's Status Display (Admin/HR View-Only) -->
+                    <div class="mb-5" id="todayStatusDisplay" style="display:none;">
+                        <h6 class="text-dim text-uppercase fw-bold mb-3 ls-1">Current Status</h6>
+                        <div class="stat-box p-4 text-center">
+                            <div class="h4 fw-bold mb-0 text-white" id="displayStatusText">Not Marked</div>
+                            <div class="small text-dim mt-1">Status for today</div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Records Summary -->
+                    <div class="mb-4">
+                        <h6 class="text-dim text-uppercase fw-bold mb-3 ls-1">Monthly Records</h6>
+                        <div id="monthlyRecordsPreview" class="text-dim small">
+                            <div class="mb-2">No records found for the current month.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- ADMIN/HR: Search Panel -->
     <div id="adminPanel" style="display:none;">
         <div class="clean-card mb-5 border border-secondary" style="background: rgba(0,0,0,0.2); padding: 25px;">
-            <h6 class="text-white mb-3" style="font-size: 1.1rem;"><i class="bi bi-search me-2"></i>View & Manage Employee Attendance</h6>
+            <h6 class="text-white mb-3" style="font-size: 1.1rem;"><i class="bi bi-search me-2"></i>View Employee Attendance</h6>
             <div class="row g-4 align-items-end">
                 <div class="col">
                     <input type="text" id="searchEmpId" class="form-control-custom py-2" placeholder="Employee ID (e.g. EMP001)" style="font-size: 1.05rem;">
@@ -156,32 +251,8 @@
                 </div>
             </div>
         </div>
-
-        <div class="row g-4">
-            <!-- Admin Clock Form -->
-            <div class="col-md-4 mb-4">
-                <div class="clean-card h-100 border border-secondary">
-                    <h5 class="text-white mb-3"><i class="bi bi-clock-fill me-2"></i>Live Clock (Admin)</h5>
-                    <form id="attendanceForm" onsubmit="return false;">
-                        <div class="mb-4">
-                            <label class="form-label-custom">Employee ID <span class="text-danger">*</span></label>
-                            <input type="text" id="logEmpId" class="form-control-custom" required placeholder="e.g. EMP001">
-                            <div class="small text-dim mt-2">Enter the ID and click a clock action below to securely capture exactly the current time.</div>
-                        </div>
-                        <div class="row g-2 mt-4">
-                            <div class="col-6">
-                                <button type="button" class="btn-success w-100 py-2 border-0 rounded fw-bold" onclick="adminClockIn()" id="btnLogIn">Clock In</button>
-                            </div>
-                            <div class="col-6">
-                                <button type="button" class="btn-danger w-100 py-2 border-0 rounded fw-bold" onclick="adminClockOut()" id="btnLogOut">Clock Out</button>
-                            </div>
-                        </div>
-                        <div id="logMsg" class="mt-3 text-danger small fw-medium text-center"></div>
-                    </form>
-                </div>
-            </div>
-            <!-- Attendance Table -->
-            <div class="col-md-8">
+            <!-- Table Side -->
+            <div class="col-12">
                 <div class="table-responsive bg-dark rounded p-3 border border-secondary shadow-lg h-100">
                     <h5 class="text-white mb-3" id="tableTitle">Attendance Records</h5>
                     <table class="table table-dark table-hover text-center align-middle">
@@ -207,6 +278,7 @@
 
 <script>
 const user = getCurrentUser();
+let currentEmpId = user.employee_id || ''; // Tracks the employee being viewed/marked
 
 // ─── Utility: compute duration from time strings ─────────────
 function calcDuration(timeIn, timeOut) {
@@ -246,8 +318,86 @@ function startClock() {
 async function initEmployeePanel() {
     document.getElementById('employeeCheckInPanel').style.display = 'block';
     startClock();
+    initCalendar();
     await checkTodayStatus();
     await loadAttendance(user.employee_id);
+}
+
+let calendar = null;
+function initCalendar() {
+    const calendarEl = document.getElementById('attendanceCalendar');
+    if (!calendarEl) return;
+    
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: false, // Custom toolbar used
+        height: 'auto',
+        dayHeaderContent: function(arg) {
+            return arg.date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+        },
+        events: [],
+        dateClick: function(info) {
+            markAttendanceForDate(info.dateStr);
+        },
+        eventContent: function(arg) {
+            let el = document.createElement('div');
+            el.className = `status-dot status-dot-${arg.event.extendedProps.status.toLowerCase().replace(' ', '-')}`;
+            return { domNodes: [el] };
+        },
+        didMount: function() {
+            updateCalendarTitle();
+        },
+        datesSet: function() {
+            updateCalendarTitle();
+        }
+    });
+    calendar.render();
+}
+
+function updateCalendarTitle() {
+    const titleEl = document.getElementById('calendarTitle');
+    if (titleEl && calendar) {
+        titleEl.textContent = calendar.view.title;
+    }
+}
+
+let currentLogs = [];
+
+async function markAttendanceForDate(dateStr) {
+    if (user.role === 'employee') {
+        const log = currentLogs.find(a => a.attendance_date === dateStr);
+        const status = log ? (log.status || 'Present') : 'No record';
+        API.showToast(`Status for ${dateStr}: ${status}`, 'info');
+        return;
+    }
+
+    if (!currentEmpId) {
+        alert('Please Load Records for an employee first.');
+        return;
+    }
+
+    // "Late" is excluded from manual marking as it is now automated
+    const status = prompt(`Update status for ${dateStr}:\n(Present, Absent, On Leave)`, 'Present');
+    if (!status) return;
+    
+    const valid = ['Present', 'Absent', 'On Leave'];
+    const lower = status.toLowerCase();
+    let chosen = 'Present';
+    if (lower.startsWith('p')) chosen = 'Present';
+    else if (lower.startsWith('a')) chosen = 'Absent';
+    else if (lower.startsWith('o')) chosen = 'On Leave';
+
+    try {
+        await API.post('/api/attendance', {
+            employee_id: currentEmpId,
+            attendance_date: dateStr,
+            status: chosen
+        });
+        API.showToast(`Marked as ${chosen} for ${dateStr}`, 'success');
+        await loadAttendance(currentEmpId);
+    } catch (err) {
+        alert(err.message || 'Failed to save status.');
+    }
 }
 
 async function checkTodayStatus() {
@@ -260,28 +410,25 @@ async function checkTodayStatus() {
         const rec = await API.get('/api/attendance/today');
 
         if (!rec || !rec.time_in) {
-            // Not checked in yet
             badge.className      = 'status-badge status-none';
             badge.innerHTML      = '<i class="bi bi-circle-fill" style="font-size:8px;"></i> Not Checked In';
             infoEl.innerHTML     = '';
             btnIn.disabled       = false;
             btnOut.disabled      = true;
         } else if (rec.time_in && !rec.time_out) {
-            // Checked in, not out
             badge.className       = 'status-badge status-in';
             badge.innerHTML       = '<i class="bi bi-circle-fill" style="font-size:8px;"></i> CHECKED IN';
             infoEl.innerHTML      = `<i class="bi bi-clock me-1"></i> In at <strong class="text-white">${formatTime12Hour(rec.time_in)}</strong>`;
             btnIn.disabled        = true;
             btnOut.disabled       = false;
         } else {
-            // Fully clocked out of previous session
             badge.className       = 'status-badge status-out';
             badge.innerHTML       = '<i class="bi bi-check-circle-fill" style="font-size:14px;"></i> CLOCKED OUT';
             infoEl.innerHTML      = `
                 <div><i class="bi bi-box-arrow-in-right me-1"></i> Last In: <strong class="text-white">${formatTime12Hour(rec.time_in)}</strong></div>
                 <div><i class="bi bi-box-arrow-right me-1"></i> Last Out: <strong class="text-white">${formatTime12Hour(rec.time_out)}</strong>
                 &nbsp;|&nbsp; <span class="text-success">${calcDuration(rec.time_in, rec.time_out)}</span></div>`;
-            btnIn.disabled        = false; // allow checking in again
+            btnIn.disabled        = false;
             btnOut.disabled       = true;
         }
     } catch (e) {
@@ -336,34 +483,122 @@ async function doCheckOut() {
     }
 }
 
-// ─── Admin / HR Panel ─────────────────────────────────────────
 function initAdminPanel() {
     document.getElementById('adminPanel').style.display = 'block';
-    loadAttendance(); // Load all by default
+    initCalendar();
+    loadAttendance(); // This will now show the search prompt state
 }
 
-// ─── Shared: Load Attendance Table ────────────────────────────
 async function loadAttendance(empId = '') {
+    currentEmpId = empId || (user.role === 'employee' ? user.employee_id : '');
     const titleEl = document.getElementById('tableTitle');
     const tbody   = (user.role === 'employee') 
         ? document.getElementById('empAttendanceTableBody') 
         : document.getElementById('adminAttendanceTableBody');
 
-    if (user.role !== 'employee' && titleEl) {
-        titleEl.innerText = empId ? `Records for ${empId}` : 'All Staff Attendance History';
-        if (empId) document.getElementById('logEmpId').value = empId;
+    const colCount = (user.role === 'employee') ? 4 : 6;
+
+    // For Admin/HR, if no specific employee ID is searched, show a search prompt instead of all staff
+    if (user.role !== 'employee' && !empId) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-dim py-5">
+            <i class="bi bi-search d-block fs-1 mb-2 opacity-25"></i>
+            Please search for an Employee ID to view records
+        </td></tr>`;
+        if (titleEl) titleEl.innerText = 'Search Employee Attendance';
+        
+        // Reset stats and calendar
+        ['countPresent', 'countAbsent', 'countLate', 'countLeave'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = '0';
+        });
+        if (calendar) calendar.setOption('events', []);
+        const previewEl = document.getElementById('monthlyRecordsPreview');
+        if (previewEl) previewEl.innerHTML = 'No employee searched.';
+        return;
     }
 
-    const colCount = (user.role === 'employee') ? 4 : 6;
+    if (user.role !== 'employee' && titleEl) {
+        titleEl.innerText = empId ? `Records for ${empId}` : 'All Staff Attendance History';
+        if (empId) {
+            const logIdEl = document.getElementById('logEmpId');
+            if (logIdEl) logIdEl.value = empId;
+        }
+    }
+
     if (tbody) tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-dim py-4">Loading...</td></tr>`;
 
     try {
         const url = empId ? `/api/attendance?employee_id=${empId}` : '/api/attendance';
         const logs = await API.get(url);
+        currentLogs = logs;
         
-        if (!logs.length) {
-            tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-dim py-4">No attendance records found.</td></tr>`;
-            return;
+        if (calendar) {
+            const events = logs.map(a => ({
+                start: a.attendance_date,
+                allDay: true,
+                extendedProps: { status: a.status || 'Present' }
+            }));
+            calendar.setOption('events', events);
+        }
+
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        let counts = { Present: 0, Absent: 0, Late: 0, 'On Leave': 0 };
+        const monthLogs = logs.filter(a => a.attendance_date.startsWith(currentMonth));
+        monthLogs.forEach(a => {
+            const s = a.status || 'Present';
+            if (counts[s] !== undefined) counts[s]++;
+        });
+
+        document.getElementById('countPresent').innerText = counts.Present;
+        document.getElementById('countAbsent').innerText  = counts.Absent;
+        document.getElementById('countLate').innerText    = counts.Late;
+        document.getElementById('countLeave').innerText   = counts['On Leave'];
+
+        const todayStr = now.toISOString().split('T')[0];
+        const todayLog = logs.find(a => a.attendance_date === todayStr);
+
+        const controlPanel = document.getElementById('todayStatusControl');
+        const displayPanel = document.getElementById('todayStatusDisplay');
+        const absentOption = document.getElementById('optionAbsent');
+        const lateOption   = document.getElementById('optionLate');
+
+        // Always hide 'Late' from manual markings as it's time-dependent
+        if (lateOption) lateOption.style.display = 'none';
+
+        if (user.role === 'employee') {
+            controlPanel.style.display = 'block';
+            displayPanel.style.display = 'none';
+            if (absentOption) absentOption.style.display = 'none';
+            
+            if (todayLog) {
+                document.getElementById('statusSelect').value = todayLog.status || 'Present';
+                document.getElementById('statusInfo').innerText = `Marked as ${todayLog.status || 'Present'} for today`;
+            }
+        } else {
+            controlPanel.style.display = 'block'; 
+            displayPanel.style.display = 'none';
+            if (absentOption) absentOption.style.display = 'block';
+
+            if (todayLog) {
+                document.getElementById('statusSelect').value = todayLog.status || 'Present';
+                document.getElementById('statusInfo').innerText = `Current Status: ${todayLog.status || 'Present'}`;
+            } else {
+                document.getElementById('statusSelect').value = "";
+                document.getElementById('statusInfo').innerText = "Not yet marked for today";
+            }
+        }
+
+        const previewEl = document.getElementById('monthlyRecordsPreview');
+        if (monthLogs.length === 0) {
+            previewEl.innerHTML = 'No records for this month.';
+        } else {
+            previewEl.innerHTML = monthLogs.slice(0, 5).map(a => `
+                <div class="d-flex justify-content-between mb-1 border-bottom border-secondary pb-1">
+                    <span>${a.attendance_date}</span>
+                    <span class="text-white fw-bold">${a.status || 'Present'}</span>
+                </div>
+            `).join('') + (monthLogs.length > 5 ? '<div class="mt-1 text-center small text-white-50">See more in history</div>' : '');
         }
 
         tbody.innerHTML = logs.map(a => {
@@ -403,62 +638,35 @@ async function adminClockIn() {
     const empId = document.getElementById('logEmpId').value.trim();
     const msg = document.getElementById('logMsg');
     msg.innerText = '';
-    
-    if (!empId) {
-        msg.innerText = 'Employee ID is required';
-        return;
-    }
-    
+    if (!empId) { msg.innerText = 'Employee ID is required'; return; }
     const btn = document.getElementById('btnLogIn');
     btn.disabled = true;
-
     const now  = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const date = `${yyyy}-${mm}-${dd}`;
+    const date = now.toISOString().split('T')[0];
     const time = now.toTimeString().split(' ')[0];
-
     try {
-        await API.post('/api/attendance', {
-            employee_id: empId,
-            attendance_date: date,
-            time_in: time,
-            time_out: null
-        });
+        await API.post('/api/attendance', { employee_id: empId, attendance_date: date, time_in: time, time_out: null });
         API.showToast(`Clocked IN for ${empId}`, 'success');
         document.getElementById('logEmpId').value = '';
         loadAttendance(empId);
-    } catch (err) {
-        msg.innerText = err.message || 'Check-in failed.';
-    } finally {
-        btn.disabled = false;
-    }
+    } catch (err) { msg.innerText = err.message || 'Check-in failed.'; }
+    finally { btn.disabled = false; }
 }
 
 async function adminClockOut() {
     const empId = document.getElementById('logEmpId').value.trim();
     const msg = document.getElementById('logMsg');
     msg.innerText = '';
-    
-    if (!empId) {
-        msg.innerText = 'Employee ID is required';
-        return;
-    }
-    
+    if (!empId) { msg.innerText = 'Employee ID is required'; return; }
     const btn = document.getElementById('btnLogOut');
     btn.disabled = true;
-
     try {
         await API.put('/api/attendance/checkout', { employee_id: empId });
         API.showToast(`Clocked OUT for ${empId}`, 'success');
         document.getElementById('logEmpId').value = '';
         loadAttendance(empId);
-    } catch (err) {
-        msg.innerText = err.message || 'Check-out failed.';
-    } finally {
-        btn.disabled = false;
-    }
+    } catch (err) { msg.innerText = err.message || 'Check-out failed.'; }
+    finally { btn.disabled = false; }
 }
 
 async function deleteAttendance(id) {
@@ -466,20 +674,26 @@ async function deleteAttendance(id) {
     try {
         await API.delete(`/api/attendance/${id}`);
         API.showToast('Attendance record deleted successfully.', 'success');
-        const searchInput = document.getElementById('searchEmpId').value.trim();
-        loadAttendance(searchInput); // refresh with current search
-    } catch (err) {
-        alert(err.message || 'Failed to delete record.');
-    }
+        loadAttendance(currentEmpId);
+    } catch (err) { alert(err.message || 'Failed to delete record.'); }
 }
 
-// ─── Init based on role ───────────────────────────────────────
+async function saveTodayStatus() {
+    const status = document.getElementById('statusSelect').value;
+    if (!status) { alert('Please select a status first.'); return; }
+    if (!currentEmpId) { alert('Please search for an employee first.'); return; }
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    try {
+        await API.post('/api/attendance', { employee_id: currentEmpId, attendance_date: dateStr, status: status });
+        API.showToast(`Attendance marked as ${status}`, 'success');
+        await loadAttendance(currentEmpId);
+    } catch (err) { alert(err.message || 'Failed to save attendance.'); }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    if (user.role === 'employee') {
-        initEmployeePanel();
-    } else {
-        initAdminPanel();
-    }
+    if (user.role === 'employee') initEmployeePanel();
+    else initAdminPanel();
 });
 </script>
 </body>

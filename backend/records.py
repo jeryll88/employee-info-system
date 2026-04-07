@@ -10,21 +10,7 @@ def get_db():
     from app import get_db as _get_db
     return _get_db()
 
-def serialize_dates(row):
-    """Convert date/datetime/timedelta objects to strings for JSON serialization."""
-    if not row:
-        return row
-    from datetime import timedelta
-    for key, val in row.items():
-        if isinstance(val, (date, datetime)):
-            row[key] = val.isoformat()
-        elif isinstance(val, timedelta):
-            # Format timedelta as HH:MM:SS string
-            total_seconds = int(val.total_seconds())
-            hours, remainder = divmod(total_seconds, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            row[key] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-    return row
+# Redundant serialization removed. Global fix in app.py handles date/datetime/timedelta.
 
 # ─── Trainings ───────────────────────────────────────────────
 @records_bp.route('/api/trainings', methods=['GET'])
@@ -42,7 +28,7 @@ def get_trainings():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify([serialize_dates(r) for r in rows])
+    return jsonify(rows)
 
 @records_bp.route('/api/trainings', methods=['POST'])
 @require_role('admin', 'hr')
@@ -93,7 +79,7 @@ def get_training(id):
     cursor.close()
     conn.close()
     if not row: return jsonify({'error': 'Training not found'}), 404
-    return jsonify(serialize_dates(row))
+    return jsonify(row)
 
 @records_bp.route('/api/trainings/<int:id>', methods=['PUT'])
 @require_role('admin', 'hr')
@@ -129,7 +115,7 @@ def get_service_records():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify([serialize_dates(r) for r in rows])
+    return jsonify(rows)
 
 @records_bp.route('/api/service_records', methods=['POST'])
 @require_role('admin', 'hr')
@@ -171,7 +157,7 @@ def get_service_record(id):
     cursor.close()
     conn.close()
     if not row: return jsonify({'error': 'Record not found'}), 404
-    return jsonify(serialize_dates(row))
+    return jsonify(row)
 
 @records_bp.route('/api/service_records/<int:id>', methods=['PUT'])
 @require_role('admin', 'hr')
@@ -256,7 +242,7 @@ def get_attendance():
             ''', (my_emp_id,))
             
         rows = cursor.fetchall()
-        return jsonify([serialize_dates(r) for r in rows])
+        return jsonify(rows)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
@@ -284,7 +270,7 @@ def get_today_attendance():
     row = cursor.fetchone()
     cursor.close()
     conn.close()
-    return jsonify(serialize_dates(row) if row else {})
+    return jsonify(row if row else {})
 
 @records_bp.route('/api/attendance', methods=['POST'])
 @require_auth
@@ -298,6 +284,22 @@ def log_attendance():
     a_date = data.get('attendance_date')
     t_in   = data.get('time_in')
     t_out  = data.get('time_out')
+    
+    # Handle status: use provided status or calculate based on check-in time
+    status = data.get('status')
+    if t_in and not status:
+        # Check if t_in is after 8:00 AM (08:00:00)
+        if t_in > '08:00:00':
+            status = 'Late'
+        else:
+            status = 'Present'
+    
+    # Fallback to 'Present' if still not set
+    if not status:
+        status = 'Present'
+
+    if status == 'Absent' and role not in ('hr', 'admin'):
+        return jsonify({'error': 'Unauthorized to mark as Absent. Contact HR/Admin.'}), 403
 
     conn = get_db()
     if not conn:
@@ -305,7 +307,7 @@ def log_attendance():
         
     cursor = conn.cursor(dictionary=True)
     # Always insert a new record so we don't overwrite previous check-ins for the same day
-    cursor.execute('INSERT INTO attendance (employee_id, attendance_date, time_in, time_out) VALUES (%s, %s, %s, %s)', (emp_id, a_date, t_in, t_out))
+    cursor.execute('INSERT INTO attendance (employee_id, attendance_date, time_in, time_out, status) VALUES (%s, %s, %s, %s, %s)', (emp_id, a_date, t_in, t_out, status))
     
     conn.commit()
     cursor.close()
@@ -393,7 +395,7 @@ def get_payroll_history():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify([serialize_dates(r) for r in rows])
+    return jsonify(rows)
 
 @records_bp.route('/api/payroll/generate', methods=['POST'])
 @require_role('admin', 'hr')
@@ -551,7 +553,7 @@ def get_leaves():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify([serialize_dates(r) for r in rows])
+    return jsonify(rows)
 
 @records_bp.route('/api/leave', methods=['POST'])
 @require_auth
@@ -560,16 +562,24 @@ def file_leave():
     emp_id = session['user'].get('employee_id')
     if not emp_id: return jsonify({'error': 'Account not linked to an employee'}), 400
     
+    leave_type = data.get('leave_type')
+    date_from  = data.get('date_from')
+    date_to    = data.get('date_to')
+    reason     = data.get('reason')
+
+    if not all([leave_type, date_from, date_to]):
+        return jsonify({'error': 'Missing required fields: leave_type, date_from, and date_to are mandatory.'}), 400
+    
     conn = get_db()
     cursor = conn.cursor()
     try:
         cursor.execute('''
             INSERT INTO leaves (employee_id, leave_type, date_from, date_to, reason, status)
             VALUES (%s, %s, %s, %s, %s, 'Pending')
-        ''', (emp_id, data.get('leave_type'), data.get('date_from'), data.get('date_to'), data.get('reason')))
+        ''', (emp_id, leave_type, date_from, date_to, reason))
         conn.commit()
     except Exception as e:
-        return jsonify({'error': 'Failed to process request (are details valid?)'}), 400
+        return jsonify({'error': f"Database error: {str(e)}"}), 500
     finally:
         cursor.close()
         conn.close()
@@ -674,7 +684,7 @@ def get_notifications():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify([serialize_dates(r) for r in rows])
+    return jsonify(rows)
 
 @records_bp.route('/api/notifications/<int:notif_id>/read', methods=['PUT'])
 @require_auth
@@ -715,7 +725,7 @@ def get_activities():
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-    return jsonify([serialize_dates(r) for r in rows])
+    return jsonify(rows)
 
 @records_bp.route('/api/activities', methods=['POST'])
 @require_auth
