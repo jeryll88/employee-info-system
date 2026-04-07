@@ -203,7 +203,7 @@
                             <select id="statusSelect" class="form-select-custom w-100 py-3 px-4">
                                 <option value="" disabled selected>-- Mark --</option>
                                 <option value="Present">Present</option>
-                                <option value="Absent">Absent</option>
+                                <option id="optionAbsent" value="Absent">Absent</option>
                                 <option value="Late">Late</option>
                                 <option value="On Leave">On Leave</option>
                             </select>
@@ -364,7 +364,7 @@ function updateCalendarTitle() {
 let currentLogs = [];
 
 async function markAttendanceForDate(dateStr) {
-    if (user.role !== 'employee') {
+    if (user.role === 'employee') {
         const log = currentLogs.find(a => a.attendance_date === dateStr);
         const status = log ? (log.status || 'Present') : 'No record';
         API.showToast(`Status for ${dateStr}: ${status}`, 'info');
@@ -570,24 +570,31 @@ async function loadAttendance(empId = '') {
         const todayStr = now.toISOString().split('T')[0];
         const todayLog = logs.find(a => a.attendance_date === todayStr);
 
+        const controlPanel = document.getElementById('todayStatusControl');
+        const displayPanel = document.getElementById('todayStatusDisplay');
+        const absentOption = document.getElementById('optionAbsent');
+
         if (user.role === 'employee') {
-            document.getElementById('todayStatusControl').style.display = 'block';
-            document.getElementById('todayStatusDisplay').style.display = 'none';
+            controlPanel.style.display = 'block';
+            displayPanel.style.display = 'none';
+            if (absentOption) absentOption.style.display = 'none'; // Employees can't mark absent
+            
             if (todayLog) {
                 document.getElementById('statusSelect').value = todayLog.status || 'Present';
                 document.getElementById('statusInfo').innerText = `Marked as ${todayLog.status || 'Present'} for today`;
             }
         } else {
-            document.getElementById('todayStatusControl').style.display = 'none';
-            document.getElementById('todayStatusDisplay').style.display = 'block';
+            // Admin and HR can mark any status
+            controlPanel.style.display = 'block'; 
+            displayPanel.style.display = 'none';
+            if (absentOption) absentOption.style.display = 'block';
+
             if (todayLog) {
-                const s = todayLog.status || 'Present';
-                const colorMap = { 'Present': 'text-success', 'Absent': 'text-danger', 'Late': 'text-warning', 'On Leave': 'text-primary' };
-                document.getElementById('displayStatusText').innerText = s;
-                document.getElementById('displayStatusText').className = `h4 fw-bold mb-0 ${colorMap[s] || 'text-white'}`;
+                document.getElementById('statusSelect').value = todayLog.status || 'Present';
+                document.getElementById('statusInfo').innerText = `Current Status: ${todayLog.status || 'Present'}`;
             } else {
-                document.getElementById('displayStatusText').innerText = 'No Record';
-                document.getElementById('displayStatusText').className = 'h4 fw-bold mb-0 text-white-50';
+                document.getElementById('statusSelect').value = "";
+                document.getElementById('statusInfo').innerText = "Not yet marked for today";
             }
         }
 

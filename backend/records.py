@@ -300,6 +300,9 @@ def log_attendance():
     t_out  = data.get('time_out')
     status = data.get('status', 'Present')
 
+    if status == 'Absent' and role not in ('hr', 'admin'):
+        return jsonify({'error': 'Unauthorized to mark as Absent. Contact HR/Admin.'}), 403
+
     conn = get_db()
     if not conn:
         return jsonify({'error': 'Database connection failed'}), 500
