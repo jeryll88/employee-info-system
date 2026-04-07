@@ -312,8 +312,8 @@ def log_attendance():
     if not status:
         status = 'Present'
 
-    if status == 'Absent' and role not in ('hr', 'admin'):
-        return jsonify({'error': 'Unauthorized to mark as Absent. Contact HR/Admin.'}), 403
+    if status in ('Absent', 'On Leave') and role not in ('hr', 'admin'):
+        return jsonify({'error': f'Unauthorized to mark as {status}. Contact HR/Admin.'}), 403
 
     conn = get_db()
     if not conn:
