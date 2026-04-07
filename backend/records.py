@@ -481,6 +481,7 @@ def generate_payroll():
         _notify_employee(conn, emp_id, f"Your payslip for {month_name} has been generated. Net Pay: PHP {net_salary:,.2f}")
 
         return jsonify({
+            'id': cursor2.lastrowid,
             'employee_id': emp_id,
             'employee_name': employee_name,
             'base_salary': f"{base_salary:,.2f}",
@@ -498,6 +499,38 @@ def generate_payroll():
     finally:
         cursor.close()
         conn.close()
+
+@records_bp.route('/api/payroll/<int:id>', methods=['DELETE'])
+@require_auth
+def delete_payroll(id):
+    user = session['user']
+    role = user['role']
+    emp_id = user.get('employee_id')
+
+    conn = get_db()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+        
+    cursor = conn.cursor(dictionary=True)
+    
+    # If not admin/hr, verify it's the employee's own record
+    if role not in ('admin', 'hr'):
+        cursor.execute('SELECT employee_id FROM payroll_records WHERE id = %s', (id,))
+        rec = cursor.fetchone()
+        if not rec:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Record not found'}), 404
+        if rec['employee_id'] != emp_id:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Unauthorized to delete this record'}), 403
+
+    cursor.execute('DELETE FROM payroll_records WHERE id = %s', (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'Payroll record deleted'})
 
 # ─── Leave Requests ──────────────────────────────────────────
 @records_bp.route('/api/leave', methods=['GET'])
@@ -569,36 +602,46 @@ def update_leave(leave_id):
     conn.close()
     return jsonify({'message': f'Leave {new_status}'})
 
+@records_bp.route('/api/leave/<int:leave_id>', methods=['DELETE'])
+@require_role('admin', 'hr')
+def delete_leave(leave_id):
+    conn = get_db()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+        
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM leaves WHERE id = %s', (leave_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'Leave request deleted'})
+
 @records_bp.route('/api/leave/balance', methods=['GET'])
 @require_auth
 def leave_balance():
     emp_id = session['user'].get('employee_id')
-    if not emp_id: return jsonify({'sick_leave': 0, 'vacation_leave': 0})
+    if not emp_id: return jsonify({'total_remaining': 0, 'total_used': 0})
     conn = get_db()
     cursor = conn.cursor(dictionary=True)
     
+    # Calculate for ALL non-rejected/pending leaves (i.e. 'Approved' leaves)
+    # Regardless of their leave_type
     cursor.execute('''
         SELECT SUM(DATEDIFF(date_to, date_from) + 1) as used 
         FROM leaves 
-        WHERE employee_id = %s AND leave_type = 'Sick' AND status = 'Approved'
+        WHERE employee_id = %s AND status = 'Approved'
     ''', (emp_id,))
-    row1 = cursor.fetchone()
-    sick_used = int(row1['used'] or 0)
-    
-    cursor.execute('''
-        SELECT SUM(DATEDIFF(date_to, date_from) + 1) as used 
-        FROM leaves 
-        WHERE employee_id = %s AND leave_type = 'Vacation' AND status = 'Approved'
-    ''', (emp_id,))
-    row2 = cursor.fetchone()
-    vacation_used = int(row2['used'] or 0)
+    row = cursor.fetchone()
+    used = int(row['used'] or 0)
+    MAX_PAID_LEAVES = 15
+    remaining = max(0, MAX_PAID_LEAVES - used)
     
     cursor.close()
     conn.close()
     
     return jsonify({
-        'sick_leave': max(0, 15 - sick_used),
-        'vacation_leave': max(0, 15 - vacation_used)
+        'total_remaining': remaining,
+        'total_used': used
     })
 
 # ─── Notifications ───────────────────────────────────────────
