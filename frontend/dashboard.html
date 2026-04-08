@@ -47,24 +47,27 @@
     </div>
 
     <!-- Navigation (role-aware) -->
-    <div class="row g-4 mb-5" id="navBar"></div>
+    <div class="row g-3 mb-5" id="navBar"></div>
 
     <!-- Leave Balance (shown only for employee role) -->
     <div class="row g-4 mb-5" id="leaveBalanceSection" style="display:none;">
         <div class="col-12">
             <div class="glass-card border border-secondary">
-                <h5 class="mb-3 text-white"><i class="bi bi-calendar-check text-primary me-2"></i>My Leave Balance</h5>
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-calendar-check text-primary me-2 fs-4"></i>
+                    <h5 class="mb-0 text-white fw-bold">My Leave Balance</h5>
+                </div>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <div class="glass-card text-center h-100 d-flex flex-column justify-content-center" style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3);">
-                            <i class="bi bi-briefcase-fill fs-3 text-success"></i>
-                            <div class="mt-2 text-dim" style="font-size:13px; font-weight:600;">AVAILABLE PAID LEAVES</div>
+                        <div class="glass-card text-center h-100 d-flex flex-column justify-content-center" style="background:linear-gradient(135deg, rgba(34,197,94,0.08), rgba(6,182,212,0.05)); border:1px solid rgba(34,197,94,0.2);">
+                            <i class="bi bi-briefcase-fill fs-2" style="color:#4ade80; filter: drop-shadow(0 0 12px rgba(34,197,94,0.4));"></i>
+                            <div class="mt-2" style="font-size:11px; font-weight:700; letter-spacing:1.5px; color:#94a3b8;">AVAILABLE PAID LEAVES</div>
                             <div class="stat-number text-success" id="totalRemaining">–</div>
-                            <div style="font-size:11px;color:#9ca3af;">days remaining globally</div>
+                            <div style="font-size:11px;color:#64748b;">days remaining globally</div>
                         </div>
                     </div>
                     <div class="col-md-6 d-flex align-items-center">
-                        <a href="leave_request.html" class="btn btn-primary w-100 shadow-lg" style="border-radius:12px;padding:25px;font-weight:700;letter-spacing:1px;font-size:1.1rem;">
+                        <a href="leave_request.html" class="btn btn-primary w-100 shadow-lg" style="border-radius:14px;padding:28px;font-weight:700;letter-spacing:1px;font-size:1.1rem;">
                             <i class="bi bi-plus-circle me-2"></i>FILE A LEAVE REQUEST
                         </a>
                     </div>
@@ -76,9 +79,12 @@
     <!-- Employee Welcome Section -->
     <div id="employeeWelcomeSection" class="row justify-content-center" style="display:none;">
         <div class="col-md-8 text-center mt-5 mb-5 pb-5 pt-5">
+            <div style="font-size: 48px; margin-bottom: 16px;">
+                <i class="bi bi-person-badge-fill" style="background: linear-gradient(135deg, #818cf8, #6366f1); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 20px rgba(99,102,241,0.4));"></i>
+            </div>
             <h1 class="display-4 fw-bold text-white mb-3">Welcome to your Portal</h1>
             <p class="lead text-dim mb-5">Access your personal information, service records, track performance evaluations, and manage your employment profile securely.</p>
-            <a href="#" id="empProfileBtn" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-lg" style="font-weight:600; letter-spacing:1px; background:var(--primary); border:none;">
+            <a href="#" id="empProfileBtn" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-lg" style="font-weight:700; letter-spacing:1px; background:linear-gradient(135deg, #6366f1, #8b5cf6); border:none;">
                 <i class="bi bi-person-badge-fill me-2"></i> View My Profile
             </a>
         </div>
@@ -121,7 +127,7 @@
         <div class="col-md-6">
             <div class="glass-card h-100">
                 <div class="d-flex align-items-center mb-4">
-                    <i class="bi bi-diagram-3-fill me-2 text-primary fs-5"></i>
+                    <i class="bi bi-diagram-3-fill me-2 fs-5" style="color:#818cf8;"></i>
                     <h5 class="mb-0 text-white">Headcount by Department</h5>
                 </div>
                 <div id="deptGrid" class="dept-grid">
@@ -131,8 +137,11 @@
             </div>
         </div>
         <div class="col-md-6">
-            <div class="glass-card h-100 table-responsive" style="max-height:320px;">
-                <h5 class="mb-3"><i class="bi bi-star-fill me-2"></i>Recent Evaluations</h5>
+            <div class="glass-card h-100 table-responsive" style="max-height:380px;">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-star-fill me-2" style="color:#fbbf24; filter: drop-shadow(0 0 8px rgba(251,191,36,0.4));"></i>
+                    <h5 class="mb-0 text-white">Recent Evaluations</h5>
+                </div>
                 <table class="table table-dark table-hover mb-0 custom-table">
                     <tbody id="evalTableBody"></tbody>
                 </table>
@@ -143,9 +152,12 @@
     <!-- Recent Activities (Admin + HR) -->
     <div class="glass-card" id="recentActivitiesSection" style="display:none;">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Activities</h5>
-            <button class="btn btn-outline-danger btn-sm border-0" onclick="clearActivities()">
-                <i class="bi bi-trash"></i>
+            <div class="d-flex align-items-center">
+                <i class="bi bi-clock-history me-2" style="color:#818cf8;"></i>
+                <h5 class="mb-0 text-white">Recent Activities</h5>
+            </div>
+            <button class="btn btn-outline-danger btn-sm border-0" onclick="clearActivities()" style="border-radius:8px; padding:6px 14px;">
+                <i class="bi bi-trash me-1"></i><span style="font-size:12px;">Clear</span>
             </button>
         </div>
         <div class="table-responsive">
