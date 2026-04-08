@@ -121,7 +121,7 @@ async function loadHistory(empId) {
                 const netFmt    = parseFloat(rec.net_salary || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 });
                 const dateFmt   = rec.created_at ? new Date(rec.created_at).toLocaleDateString('en-PH') : '';
                 return `
-                <div class="history-item mb-2" onclick='renderPayslipFromRecord(${JSON.stringify(rec).replace(/'/g, "&apos;")})' style="padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius:6px;">
+                <div class="history-item mb-2" onclick='renderPayslipFromRecord(${JSON.stringify(rec).replace(/'/g, "&apos;")})' style="padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius:6px; cursor: pointer;">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <div class="text-white small fw-bold">${monthName}</div>
@@ -129,11 +129,12 @@ async function loadHistory(empId) {
                         </div>
                         <div class="text-end d-flex align-items-center gap-3">
                             <div class="text-success fw-bold small">PHP ${netFmt}</div>
+                            ${user.role !== 'employee' ? `
                             <button class="btn btn-link text-danger p-0 delete-btn-payroll" 
                                 onclick="deletePayroll(${rec.id}, event)" 
                                 title="Delete Record">
                                 <i class="bi bi-trash"></i>
-                            </button>
+                            </button>` : ''}
                         </div>
                     </div>
                 </div>`;
@@ -142,7 +143,7 @@ async function loadHistory(empId) {
             return `
             <div class="employee-payroll-group mb-3">
                 <div class="d-flex align-items-center justify-content-between p-2 clickable-header" 
-                     onclick="window.location.href='employee_history.html?id=${empId}&tab=payroll'"
+                     onclick="toggleHistory('group-${empId}', this)"
                      style="background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; transition: background 0.2s;">
                     <div class="d-flex align-items-center gap-2">
                          <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
@@ -154,7 +155,10 @@ async function loadHistory(empId) {
                             <div class="text-dim" style="font-size: 11px;">${empId} &bull; ${empRecords.length} record${empRecords.length > 1 ? 's' : ''}</div>
                         </div>
                     </div>
-                    <i class="bi bi-arrow-right text-dim transition-icon"></i>
+                    <i class="bi bi-chevron-down text-dim transition-icon"></i>
+                </div>
+                <div id="group-${empId}" class="mt-2 ps-3 border-start border-secondary" style="display:none;">
+                    ${historyItems}
                 </div>
             </div>`;
         }).join('');
