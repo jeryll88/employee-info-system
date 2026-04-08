@@ -411,6 +411,21 @@ def get_payroll_history():
     conn.close()
     return jsonify([serialize_dates(r) for r in rows])
 
+@records_bp.route('/api/payroll/<int:id>', methods=['DELETE'])
+@require_role('admin', 'hr')
+def delete_payroll(id):
+    conn = get_db()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+        
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM payroll_records WHERE id = %s', (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'Payroll record deleted'})
+
+
 @records_bp.route('/api/payroll/generate', methods=['POST'])
 @require_role('admin', 'hr')
 def generate_payroll():

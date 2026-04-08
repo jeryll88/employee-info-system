@@ -54,3 +54,16 @@
     font-size: 0.78rem;
     font-weight: 600;
 }
+.delete-payroll-btn {
+    opacity: 0.3;
+    transition: all 0.2s ease;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+.history-item:hover .delete-payroll-btn {
+    opacity: 1;
+}
+.delete-payroll-btn:hover {
+    transform: scale(1.2);
+    color: #ef4444 !important;
+}
