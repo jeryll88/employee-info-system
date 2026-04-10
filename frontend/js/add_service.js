@@ -1,49 +1,40 @@
-<script src="./bootstrap/js/bootstrap.bundle.min.js"></script>
+/**
+ * add_service.js
+ * Handles adding a new service record for an employee.
+ */
 
-const form = document.getElementById("addEmployeeForm");
+const urlParams = new URLSearchParams(window.location.search);
+const empId = urlParams.get('empId');
+document.getElementById('displayEmpId').value = empId;
 
-form.addEventListener("submit", function(e){
+document.getElementById('serviceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const firstName = document.getElementById("firstName").value.trim();
-    const lastName = document.getElementById("lastName").value.trim();
-    const birthday = document.getElementById("birthday").value;
-    const status = document.getElementById("status").value;
-
-    if(!firstName || !lastName || !birthday || !status){
-        alert("Please fill all fields");
-        return;
-    }
-
-    let employees = JSON.parse(localStorage.getItem("employees")) || [];
-
-    // ==================== GENERATE EMPLOYEE ID ====================
-    function generateEmployeeID() {
-        let total = employees.length + 1;
-        let group = Math.ceil(total / 10);
-        let position = total % 10;
-        if (position === 0) position = 10;
-        let groupFormatted = String(group).padStart(3,'0');
-        let positionFormatted = String(position).padStart(2,'0');
-        return `E${groupFormatted}-${positionFormatted}`;
-    }
-
-    const newEmployee = {
-        id: generateEmployeeID(),
-        firstName: firstName,
-        lastName: lastName,
-        birthday: birthday,
-        status: status
+    const payload = {
+        employee_id: empId,
+        designation: document.getElementById('designation').value.trim(),
+        status: document.getElementById('status').value.trim(),
+        salary_range: document.getElementById('salaryRange').value.trim(),
+        station: document.getElementById('station').value.trim(),
+        date_from: document.getElementById('dateFrom').value,
+        date_to: document.getElementById('dateTo').value || null,
+        remarks: document.getElementById('remarks').value.trim()
     };
 
-    employees.push(newEmployee);
-    localStorage.setItem("employees", JSON.stringify(employees));
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
 
-    // Log activity
-    if(typeof logActivity === "function"){
-        logActivity("Added Employee", `${firstName} ${lastName}`);
+    try {
+        await API.post('/api/service_records', payload);
+        API.showToast("Service record saved successfully!");
+        API.logActivity(`Added service record for Employee ${empId}: ${payload.designation}`);
+        setTimeout(goBack, 1000);
+    } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-save me-2"></i> Save Record';
     }
-
-    alert("Employee added successfully!");
-    window.location.href = "employee_list.html";
 });
+
+function goBack() {
+    window.location.href = `service_record.html?id=${empId}`;
+}
