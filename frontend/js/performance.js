@@ -57,7 +57,7 @@ async function loadEvaluations() {
                     <td style="white-space:normal; max-width:250px;" class="small">${e.comments || '—'}</td>
                     <td>
                         <div class="d-flex justify-content-center gap-2">
-                            ${user.role === 'admin' ? `
+                            ${(user.role === 'admin' || user.role === 'hr') ? `
                                 <button class="btn btn-sm btn-outline-danger" onclick="deleteEvaluation(${e.id})" title="Delete">
                                     <i class="bi bi-trash"></i>
                                 </button>

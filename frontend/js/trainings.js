@@ -54,7 +54,7 @@ async function loadTrainings() {
                                     <i class="bi bi-pencil"></i>
                                 </a>
                             ` : ''}
-                            ${user.role === 'admin' ? `
+                            ${(user.role === 'admin' || user.role === 'hr') ? `
                                 <button class="btn btn-sm btn-outline-danger" onclick="deleteTraining(${t.id}, '${t.title}')" title="Delete">
                                     <i class="bi bi-trash"></i>
                                 </button>

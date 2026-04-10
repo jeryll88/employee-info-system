@@ -28,14 +28,20 @@ def run_migration():
         # Prepare for migration
         print("Starting migration...")
         
-        if 'leaves' in tables:
-            print("Dropping old 'leaves' table...")
-            cursor.execute("DROP TABLE IF EXISTS leaves")
-            print("Dropped.")
+        # --- DANGEROUS LOGIC REMOVED TO PREVENT DATA LOSS ---
+        # The following logic was dropping the 'leaves' table and replacing it with an empty 'leave_requests' table.
+        # This caused existing leave requests to disappear whenever this script was run.
+        
+        # if 'leaves' in tables:
+        #     print("Dropping old 'leaves' table...")
+        #     cursor.execute("DROP TABLE IF EXISTS leaves")
+        #     print("Dropped.")
 
-        print("Renaming 'leave_requests' to 'leaves'...")
-        cursor.execute("ALTER TABLE leave_requests RENAME TO leaves")
-        print("Renamed.")
+        # print("Renaming 'leave_requests' to 'leaves'...")
+        # cursor.execute("ALTER TABLE leave_requests RENAME TO leaves")
+        # print("Renamed.")
+        
+        print("Migration bypassed to protect existing data in 'leaves'.")
         
         conn.commit()
         print("Migration Successful.")

@@ -53,7 +53,7 @@ def add_training():
     return jsonify({'message': 'Training added'}), 201
 
 @records_bp.route('/api/trainings/<int:id>', methods=['DELETE'])
-@require_role('admin')
+@require_role('admin', 'hr')
 def delete_training(id):
     conn = get_db()
     if not conn:
@@ -184,7 +184,7 @@ def update_service_record(id):
     return jsonify({'message': 'Record updated'})
 
 @records_bp.route('/api/service_records/<int:id>', methods=['DELETE'])
-@require_role('admin')
+@require_role('admin', 'hr')
 def delete_service_record(id):
     conn = get_db()
     if not conn:
@@ -347,6 +347,20 @@ def checkout_attendance():
     cursor.close()
     conn.close()
     return jsonify({'message': 'Checked out successfully', 'time_out': time_out})
+
+@records_bp.route('/api/performance/<int:id>', methods=['DELETE'])
+@require_role('admin', 'hr')
+def delete_performance(id):
+    conn = get_db()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+        
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM performance WHERE id = %s', (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'Performance record deleted'})
 
 @records_bp.route('/api/attendance/<int:id>', methods=['DELETE'])
 @require_role('admin', 'hr')
@@ -573,11 +587,14 @@ def file_leave():
     conn = get_db()
     cursor = conn.cursor()
     try:
+        print(f"DEBUG: Filing leave for {emp_id} - {leave_type} from {date_from} to {date_to}")
         cursor.execute('''
             INSERT INTO leaves (employee_id, leave_type, date_from, date_to, reason, status)
             VALUES (%s, %s, %s, %s, %s, 'Pending')
         ''', (emp_id, leave_type, date_from, date_to, reason))
         conn.commit()
+        last_id = cursor.lastrowid
+        print(f"DEBUG: Leave filed. Result ID: {last_id}")
     except Exception as e:
         return jsonify({'error': f"Database error: {str(e)}"}), 500
     finally:

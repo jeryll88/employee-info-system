@@ -12,19 +12,16 @@ def run_migration():
         conn = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor()
         
-        # Check if leave_requests exists
-        cursor.execute("SHOW TABLES LIKE 'leave_requests'")
-        if not cursor.fetchone():
-            print("Table 'leave_requests' for renaming not found. Already migrated?")
-            return
-
-        # Drop old leaves table if exists
-        cursor.execute("DROP TABLE IF EXISTS leaves")
-        print("Dropped old 'leaves' table.")
+        # --- DANGEROUS LOGIC REMOVED TO PREVENT DATA LOSS ---
+        # The following logic was dropping the 'leaves' table and replacing it with an empty 'leave_requests' table.
+        # This caused existing leave requests to disappear whenever this script was run.
         
-        # Rename leave_requests to leaves
-        cursor.execute("ALTER TABLE leave_requests RENAME TO leaves")
-        print("Renamed 'leave_requests' to 'leaves'.")
+        # cursor.execute("DROP TABLE IF EXISTS leaves")
+        # print("Dropped old 'leaves' table.")
+        # cursor.execute("ALTER TABLE leave_requests RENAME TO leaves")
+        # print("Renamed 'leave_requests' to 'leaves'.")
+        
+        print("Migration bypassed to protect existing data in 'leaves'.")
         
         conn.commit()
         print("Migration Successful.")
