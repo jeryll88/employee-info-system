@@ -9,9 +9,9 @@ DB_CONFIG = {
 conn = mysql.connector.connect(**DB_CONFIG)
 cursor = conn.cursor()
 
-# Make sure leave_requests matches the expected fields exactly.
+# CONSISTENCY FIX: Use 'leaves' table exclusively.
 cursor.execute('''
-CREATE TABLE IF NOT EXISTS leave_requests (
+CREATE TABLE IF NOT EXISTS leaves (
     id INT AUTO_INCREMENT PRIMARY KEY,
     employee_id VARCHAR(255) NOT NULL,
     leave_type VARCHAR(50) NOT NULL,
@@ -20,8 +20,8 @@ CREATE TABLE IF NOT EXISTS leave_requests (
     reason TEXT,
     status VARCHAR(50) DEFAULT 'Pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_leave_req_employee_new FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+    CONSTRAINT fk_leaves_employee_patch FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 ''')
 conn.commit()
-print("Table created.")
+print("Leaves table checked/created.")
